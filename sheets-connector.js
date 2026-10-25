@@ -1,6 +1,6 @@
 /* Shared connector: no roster records or credentials belong in this file. */
 const SHEETS = {
-  endpoint: 'PASTE_APPS_SCRIPT_EXEC_URL_HERE',
+  endpoint: 'https://script.google.com/macros/s/AKfycbyzpNLepmy9KYidH1ABuc4faWM1RNm4Jvgpix1EjEdXbbzd5dZdpnuf_UY0OWUq9MjPrQ/exec',
   exerciseId: 'spm-p1-part4-reading-sets-1-6-v1',
   exerciseVersion: '2026-10-18',
   queueKey: 'SMTAS_SHARED_RESULTS_OUTBOX_v1'
