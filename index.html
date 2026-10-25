@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drill</title>
+<style>
+  :root{
+    --ink:#16202b; --muted:#5d6b7a; --line:#e2e8ef; --bg:#f4f6f9; --card:#fff;
+    --brand:#1f5fd0; --brand-dark:#174aa3; --ok:#12824a; --okbg:#e6f6ec; --bad:#c42a2a; --badbg:#fdeaea;
+    --warn:#9a6700; --warnbg:#fff6e0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 72px}
+  .topbar{background:var(--brand);color:#fff;padding:16px 16px 14px}
+  .topbar .inner{max-width:1180px;margin:0 auto}
+  .topbar h1{margin:0;font-size:1.12rem;letter-spacing:.2px}
+  .topbar p{margin:3px 0 0;font-size:.82rem;opacity:.9}
+  .card.narrow{max-width:860px;margin-left:auto;margin-right:auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  h2{font-size:1.18rem;margin:0 0 4px}
+  h3{font-size:1rem;margin:22px 0 10px}
+  .sub{color:var(--muted);font-size:.86rem;margin:0}
+  .badge{display:inline-block;background:#eaf1fd;color:var(--brand-dark);font-weight:700;
+    font-size:.74rem;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+  label.fld{display:block;font-weight:600;font-size:.86rem;margin:14px 0 6px}
+  input[type=text]{width:100%;padding:12px 13px;font-size:1rem;border:1px solid #c9d3df;border-radius:10px;
+    font-family:inherit;background:#fff;color:var(--ink)}
+  input[type=text]:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+  button{font-family:inherit;font-size:.95rem;font-weight:600;cursor:pointer;border-radius:10px;
+    padding:13px 20px;border:1px solid transparent;background:var(--brand);color:#fff}
+  button:hover{background:var(--brand-dark)}
+  button.ghost{background:#fff;color:var(--brand-dark);border-color:#c9d3df}
+  button.ghost:hover{background:#f0f4fa}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .passage{font-family:Georgia,"Times New Roman",serif;font-size:1.03rem;line-height:1.95;
+    background:#fcfcfd;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0 6px}
+  .passage p{margin:0 0 14px;text-indent:1.6em}
+  .passage p:last-child{margin-bottom:0}
+  .passage .ptitle{text-align:center;text-indent:0;font-weight:700;margin-bottom:16px;font-size:1.08rem}
+  .blk{display:inline-block;min-width:88px;border-bottom:2px solid #9aa7b6;text-align:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.84rem;
+    font-weight:700;color:var(--brand-dark);padding:0 6px;line-height:1.2;vertical-align:baseline}
+  .blk.ex{color:var(--ok);border-bottom-color:var(--ok)}
+  .blk.filled{border-bottom-color:var(--brand);background:#eaf1fd;border-radius:4px 4px 0 0}
+  .blk.bad{color:var(--bad);border-bottom-color:var(--bad);background:#fdeaea;border-radius:4px 4px 0 0}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:16px;align-items:start}
+  .pane{border:1px solid var(--line);border-radius:12px;background:#fcfcfd;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+  .panehead{flex:none;background:#f0f4fa;border-bottom:1px solid var(--line);padding:9px 14px;font-size:.76rem;
+    font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .panehead .hint{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600;font-size:.72rem;opacity:.85}
+  .panebody{overflow-y:auto;overscroll-behavior:contain;padding:14px 16px;height:clamp(340px,64vh,700px);
+    -webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+  .split .pane:nth-child(2) .panebody{background:#fff}
+  .panebody::-webkit-scrollbar{width:10px}
+  .panebody::-webkit-scrollbar-thumb{background:#c7d2e0;border-radius:8px;border:2px solid #fff}
+  .panebody::-webkit-scrollbar-track{background:transparent}
+  .pane .passage{border:0;background:transparent;padding:0;margin:0;border-radius:0}
+  .pane .q:first-of-type{margin-top:0}
+  .blk[id]{cursor:pointer}
+  .blk[id]:hover{background:#dce7fb;border-bottom-color:var(--brand)}
+  .q.flash{outline:2px solid var(--brand);outline-offset:2px}
+  @media(max-width:900px){
+    .split{grid-template-columns:1fr}
+    .panebody{height:auto;max-height:48vh}
+    .split .pane:nth-child(2) .panebody{max-height:none}
+  }
+  .why{margin-top:11px;border-top:1px dashed #cdd8e5;padding-top:9px}
+  .why summary{cursor:pointer;font-size:.8rem;font-weight:700;color:var(--brand-dark);list-style:none;
+    display:inline-block;padding:4px 11px;background:#eaf1fd;border:1px solid #c3d6f7;border-radius:999px}
+  .why summary::-webkit-details-marker{display:none}
+  .why summary::before{content:"\203A  "}
+  .why[open] summary::before{content:"\2039  "}
+  .why[open] summary{background:#dce7fb}
+  .whybody{margin-top:9px;font-size:.87rem;line-height:1.62}
+  .wl{margin:0 0 7px}
+  .wl:last-child{margin-bottom:0}
+  .wl.trap{color:#8c2d2d}
+  .wl.keyline{color:#0d6b3f}
+  .wl.kata{background:#fff8e1;border:1px solid #f0d99a;border-radius:8px;padding:7px 10px;
+    color:#6b4e00;font-size:.84rem}
+  .wl i{font-style:italic;font-weight:600}
+  .omy{font-size:.76rem;font-weight:600;color:#9a6700;line-height:1.3}
+  .opt.key .omy{color:#0d6b3f}
+  .opt.miss .omy{color:#a33}
+  .gw{border-bottom:1px dotted var(--brand);background:#f1f6ff;cursor:pointer;border-radius:2px}
+  .gw:active{background:#dce7fb}
+  #tip{position:fixed;z-index:60;display:none;max-width:250px;background:#16202b;color:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.84rem;
+    line-height:1.4;font-weight:600;padding:8px 12px;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  #tip b{color:#9ec5ff}
+  .bmbtn{display:inline-block;margin-left:5px;padding:1px 8px;font-size:.66rem;font-weight:800;
+    letter-spacing:.4px;color:var(--warn);background:#fff6e0;border:1px solid #f0d99a;border-radius:999px;
+    cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    vertical-align:middle;text-indent:0;user-select:none}
+  .bmbtn:hover{background:#ffeec2}
+  .bm{display:none;margin:4px 0 16px;padding:10px 13px;background:#fff8e1;border-left:3px solid #f0b429;
+    border-radius:0 9px 9px 0;font-size:.95rem;line-height:1.72;color:#4a3a00;text-indent:0}
+  .bm.show{display:block}
+  .bm .lbl{display:block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:.66rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#9a6700;margin-bottom:4px}
+  .sw{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:.7rem;font-weight:800;
+    text-transform:none;letter-spacing:0;background:#fff;border:1px solid #c9d3df;border-radius:999px;
+    padding:3px 10px;color:var(--muted);user-select:none;white-space:nowrap}
+  .sw.on{background:#e6f6ec;border-color:#9bd4b0;color:var(--ok)}
+  .suprow{display:flex;align-items:flex-start;gap:12px;background:#f7f9fc;border:1px solid var(--line);
+    border-radius:11px;padding:13px 15px;margin-top:18px;cursor:pointer}
+  .suprow.on{background:#e6f6ec;border-color:#9bd4b0}
+  .suprow .txt{font-size:.85rem;color:var(--muted)}
+  .suprow .txt b{display:block;color:var(--ink);font-size:.93rem;margin-bottom:2px}
+  .suprow .box{flex:none;width:22px;height:22px;border:2px solid #c9d3df;border-radius:6px;background:#fff;
+    margin-top:2px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+  .suprow.on .box{background:var(--ok);border-color:var(--ok)}
+  .q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:#fff}
+  .q.example{background:#f6fbf7;border-color:#bfe4cd}
+  .q.unanswered{border-color:#f0b429;background:var(--warnbg)}
+  .q.right{border-color:#bfe4cd;background:var(--okbg)}
+  .q.wrong{border-color:#f3c2c2;background:var(--badbg)}
+  .qhead{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.92rem;margin-bottom:8px}
+  .qnum{background:var(--brand);color:#fff;min-width:30px;height:26px;border-radius:7px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.82rem}
+  .q.example .qnum{background:var(--ok)}
+  .mark{margin-left:auto;font-size:.82rem;font-weight:700}
+  .mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+  .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  @media(max-width:560px){.opts{grid-template-columns:1fr}}
+  .opt{display:flex;align-items:center;gap:9px;border:1px solid #d7dfe9;border-radius:9px;
+    padding:11px 12px;cursor:pointer;background:#fff;font-size:.95rem;min-height:46px}
+  .opt:hover{border-color:var(--brand);background:#f7faff}
+  .opt input{margin:0;accent-color:var(--brand);width:17px;height:17px;flex:none}
+  .opt .ltr{font-weight:700;color:var(--muted);min-width:14px}
+  .opt.sel{border-color:var(--brand);background:#eaf1fd;box-shadow:inset 0 0 0 1px var(--brand)}
+  .opt.key{border-color:var(--ok);background:var(--okbg);box-shadow:inset 0 0 0 1px var(--ok)}
+  .opt.miss{border-color:var(--bad);background:var(--badbg);box-shadow:inset 0 0 0 1px var(--bad)}
+  .opt.locked{cursor:default}
+  .opt .tag{margin-left:auto;font-size:.72rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+  .opt.key .tag{color:var(--ok)} .opt.miss .tag{color:var(--bad)}
+  .banner{border-radius:12px;padding:16px 18px;margin:16px 0 4px;border:1px solid}
+  .banner.ok{background:var(--okbg);border-color:#bfe4cd}
+  .banner.mid{background:var(--warnbg);border-color:#f0d99a}
+  .banner.low{background:var(--badbg);border-color:#f3c2c2}
+  .banner .big{font-size:1.7rem;font-weight:800;line-height:1.2}
+  .banner .msg{font-size:.92rem;margin-top:2px}
+  .note{background:var(--warnbg);border:1px solid #f0d99a;color:#6b4e00;border-radius:10px;
+    padding:11px 13px;font-size:.88rem;margin-top:14px}
+  .prog{display:flex;gap:6px;margin:14px 0 0;flex-wrap:wrap}
+  .pill{flex:1 1 0;min-width:56px;text-align:center;font-size:.74rem;font-weight:700;padding:7px 4px;
+    border-radius:8px;background:#e9edf3;color:var(--muted);border:1px solid var(--line)}
+  .pill.now{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .pill.done{background:var(--okbg);color:var(--ok);border-color:#bfe4cd}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;margin-top:8px}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line)}
+  th{background:#f7f9fc;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  tr.total td{font-weight:800;background:#f7f9fc;border-bottom:none;font-size:1rem}
+  .wrongitem{border:1px solid #f3c2c2;background:#fffafa;border-radius:10px;padding:12px 14px;margin:9px 0}
+  .wrongitem .wh{font-weight:700;font-size:.85rem;color:var(--bad);margin-bottom:5px}
+  .wrongitem .ctx{font-family:Georgia,serif;font-size:.95rem;color:#2c3a49;margin-bottom:7px}
+  .wrongitem .ctx b{background:#ffe9a8;padding:0 4px;border-radius:3px;font-style:normal}
+  .wrongitem .cmp{font-size:.9rem}
+  .wrongitem .cmp span.y{color:var(--bad);font-weight:700}
+  .wrongitem .cmp span.c{color:var(--ok);font-weight:700}
+  .allright{background:var(--okbg);border:1px solid #bfe4cd;border-radius:10px;padding:16px;text-align:center;font-weight:700;color:var(--ok)}
+  .idline{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem;color:var(--muted);margin-top:6px}
+  .idline b{color:var(--ink)}
+  .foot{text-align:center;color:var(--muted);font-size:.78rem;margin-top:20px}
+  .instr{font-size:.9rem;margin:8px 0 0;color:#2c3a49;font-style:italic}
+  .blk.ins{display:inline;min-width:0;text-align:left;font-family:inherit;font-size:inherit;font-weight:400;
+    color:#123a7a;background:#eaf1fd;border-bottom:2px solid var(--brand);padding:1px 4px;border-radius:4px 4px 0 0;
+    line-height:inherit;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .blk.ins .bltr{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-weight:800;font-size:.8rem;margin-right:3px}
+  .blk.ins.ex{background:var(--okbg);border-bottom-color:var(--ok);color:#0d4f2f}
+  .blk.ins.bad{background:var(--badbg);border-bottom-color:var(--bad);color:#7a1d1d}
+  .blk.ins.altb,.blk.altb{background:var(--warnbg);border-bottom-color:#e0b44a;color:#6b4e00}
+  .bankbox{border:1px solid var(--line);border-radius:12px;background:#f7f9fc;padding:10px 12px;margin-bottom:12px}
+  .bankbox h4{margin:0 0 6px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .bs{display:flex;gap:10px;align-items:flex-start;padding:8px 4px;border-bottom:1px dashed #dbe3ec;font-size:.93rem;line-height:1.45}
+  .bs:last-child{border-bottom:0}
+  .bs .bl{flex:none;width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #c9d3df;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:.86rem;color:var(--brand-dark)}
+  .bs .bt{flex:1;min-width:0}
+  .bs.used .bt{color:#8592a0}
+  .bs.used .bl{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .bs .ut{flex:none;font-size:.7rem;font-weight:800;color:var(--brand-dark);align-self:center;white-space:nowrap}
+  .bs .ut:empty{display:none}
+  .bs .ut.ok,.bs .ut.xt{border-radius:999px;padding:2px 9px}
+  .bs .ut.ok{background:var(--okbg);color:var(--ok);border:1px solid #bfe4cd}
+  .bs .ut.xt{background:#eef1f5;color:var(--muted);border:1px solid var(--line)}
+  .chips{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+  @media(max-width:560px){.chips{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .chip{position:relative;padding:0;min-height:46px;font-size:1.02rem;font-weight:800;background:#fff;color:var(--ink);
+    border:1px solid #d7dfe9;border-radius:9px}
+  .chip:hover{background:#f7faff;border-color:var(--brand)}
+  .chip.sel,.chip.sel:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .chip.taken{background:#f1f3f6;color:#9aa5b1;border-style:dashed}
+  .chip .on{position:absolute;top:2px;right:5px;font-size:.6rem;font-weight:700;color:#7b8794}
+  .chip.key,.chip.key:hover{background:var(--okbg);border-color:var(--ok);color:var(--ok);box-shadow:inset 0 0 0 1px var(--ok)}
+  .chip.miss,.chip.miss:hover{background:var(--badbg);border-color:var(--bad);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+  .chip.altk,.chip.altk:hover{background:var(--warnbg);border-color:#e0b44a;color:var(--warn);box-shadow:inset 0 0 0 1px #e0b44a}
+  .chip:disabled{opacity:1;cursor:default}
+  .chip.dim:disabled{opacity:.45}
+  .pick{margin-top:9px;font-size:.9rem;color:var(--muted);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+  .pick b{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--brand-dark)}
+  .pick .y{color:var(--bad)} .pick .c{color:var(--ok)}
+  .q.altq{border-color:#f0d99a;background:var(--warnbg)}
+  .mark.alt{color:var(--warn)}
+  .wl.alt{background:#fff3d6;border:1px solid #f0d99a;border-radius:8px;padding:7px 10px;color:#6b4e00}
+  .wrongitem .cmp i{font-family:Georgia,serif;font-style:normal;color:#2c3a49}
+
+  /* ---- v1.2 maybes (tap once) / answer (tap twice) / proof words ---- */
+  .legend{margin:0 0 10px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.82rem;color:var(--muted)}
+  .legend b{color:var(--ink)}
+  .lg{display:inline-block;min-width:22px;text-align:center;font-weight:800;border-radius:5px;padding:0 4px;font-size:.78rem}
+  .lg.m{background:#fff6cc;border:1px dashed #b38f00;color:#7a5d00}
+  .lg.p{background:var(--brand);border:1px solid var(--brand);color:#fff}
+  .chip.cand{border:1px dashed #b38f00;background:#fff6cc;color:#7a5d00}
+  .chip.cand::before{content:"?";position:absolute;bottom:2px;left:6px;font-size:.6rem;font-weight:800;color:#b38f00}
+  .chip.cand.elim{text-decoration:line-through;color:#c0392b;background:#f6f2e6}
+  .chip.wm{outline:2px dashed #d4b44a;outline-offset:-5px}
+  .pick .one{color:#6b4e00;background:#fff3d6;border:1px solid #f0d99a;border-radius:7px;padding:3px 8px;display:inline-block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.84rem}
+  .pick .zero{color:var(--bad);background:var(--badbg);border:1px solid #f1b9b3;border-radius:7px;padding:3px 8px;display:inline-block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.84rem}
+  .pmk{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.78rem;font-weight:700;color:#8a6d00;background:#fff6cc;border:1px dashed #d4b44a;border-radius:6px;padding:0 6px;white-space:nowrap}
+  .pmk s{color:#c0392b}
+  input.proof{margin-top:8px;width:100%;font-size:.88rem;padding:8px 10px;border:1px dashed #c9d3df;border-radius:8px;background:#fbfcfe}
+  input.proof:focus{border-style:solid;border-color:var(--brand);outline:0;background:#fff}
+  .proofv{margin-top:8px;font-size:.86rem;color:#2c3a49}
+  .rpx{font-size:.86rem;margin-top:5px;color:#2c3a49}
+  .prt td:nth-child(4){font-family:Georgia,serif}
+  .prt .pc{color:var(--ok)} .prt .py{color:var(--bad)}
+  .blk.prev{display:inline;min-width:0;text-align:left;font-family:inherit;font-size:inherit;font-weight:400;background:#fffbea;border:0;border-bottom:2px dashed #c9a227;border-radius:4px 4px 0 0;padding:1px 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  .blk.prev:hover{background:#fff3c4;border-bottom-color:#b38f00}
+  .pvh{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:.78rem;font-weight:800;color:#7a5d00;white-space:nowrap}
+  .pvb{display:inline-block;text-indent:0;min-width:26px;min-height:22px;line-height:20px;text-align:center;margin:0 2px;padding:1px 6px;border-radius:6px;border:1px dashed #b38f00;background:#fff;color:#7a5d00;cursor:pointer}
+  .pvb.on{background:#b38f00;border-style:solid;color:#fff}
+  .pvb.out{text-decoration:line-through;color:#c0392b;border-color:#e3c9c5;cursor:default;opacity:.7}
+  .pvs{font-style:italic;color:#5a4600;font-family:Georgia,"Times New Roman",serif;font-weight:400}
+  .hlbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:10px 0 0;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.82rem;color:var(--muted)}
+  .hlbar b{color:var(--ink)}
+  .hlclr{min-height:32px;padding:4px 12px;font-size:.8rem}
+  .w.hl{background:#fff176;box-shadow:2px 0 0 #fff176,-2px 0 0 #fff176;cursor:pointer}
+  .w{-webkit-tap-highlight-color:transparent}
+  .bs{flex-wrap:wrap}
+  .qn{flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px 38px}
+  .qb{min-width:40px;min-height:34px;padding:0 8px;border-radius:8px;border:1px solid #c9d3df;background:#fff;color:var(--muted);font-size:.84rem;font-weight:800;box-shadow:none;cursor:pointer}
+  .qb:hover{border-color:var(--brand);color:var(--brand-dark);background:#f7faff}
+  .qb.cand{border:1px dashed #b38f00;background:#fff6cc;color:#7a5d00}
+  .qb.cand.elim{text-decoration:line-through;color:#c0392b;background:#f6f2e6}
+  .qb.sel,.qb.sel:hover{background:var(--brand);border-color:var(--brand);color:#fff}
+  .qb.full{opacity:.45}
+  .bs.used .qb:not(.sel):not(.cand){opacity:.45}
+  .bs.used .ut{display:none}
+  @media(max-width:560px){.qn{margin-left:0}.qb{min-width:44px;min-height:38px}}
+  @media print{.legend,input.proof,.hlbar,.qn{display:none!important}}
+  @media print{
+    body{background:#fff}
+    .split{grid-template-columns:1fr;gap:0}
+    .pane{border:0}
+    .panehead{display:none}
+    .panebody{height:auto!important;max-height:none!important;overflow:visible!important;padding:0}
+    .gw{background:transparent;border-bottom:0}
+    .bmbtn,.sw{display:none!important}
+    .topbar{background:#fff;color:#000;border-bottom:2px solid #000}
+    .no-print{display:none!important}
+    html{font-size:13px}
+    .card{box-shadow:none;border:0;padding:0;margin:6px 0}
+    .wrongitem,.banner,tr,.q{break-inside:avoid;page-break-inside:avoid}
+    .why summary{display:none}
+    .why{border-top:0;margin-top:4px;padding-top:0}
+    .wrongitem{padding:8px 10px;margin:6px 0}
+    h3{margin:14px 0 6px}
+    th,td{padding:6px 8px}
+    .wrap{padding:0}
+  }
+
+/* Shared roster and confirmed result saving */
+.cloudbar{max-width:860px;margin:16px auto;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px;line-height:1.5}
+.cloud-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.cloud-actions button{min-height:44px;padding:8px 12px;font-size:14px}
+.cloud-actions button[hidden]{display:none}select{width:100%;min-height:48px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--card);border:1px solid #8e9aaa;border-radius:8px}select:focus-visible,button:focus-visible{outline:3px solid #1f5fd0;outline-offset:3px}.roster-note{font-size:14px;line-height:1.5;color:var(--muted);margin:12px 0}.cloudbar [hidden]{display:none}
+@media(max-width:500px){.cloud-actions{flex-direction:column}.card{padding:16px}.cloudbar{padding:14px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <h1 id="apptitle"></h1>
+  <p id="appsub"></p>
+</div></div>
+<div class="wrap"><div id="app"></div>
+<p class="foot no-print">Submitted answers, proof phrases and scores are sent to your teacher’s Google Sheet. Unsent results stay in this browser until saved. On shared devices, choose Change student before the next learner.</p>
+</div>
+<script src="sheets-connector.js"></script>
+<script>
+/* ===========================================================================
+   DRILL ENGINE v1.2  --  single-file, offline, self-marking exercise
+   Reusable template. Fork this file, replace the CONTENT BLOCK below, done.
+   Everything after "END CONTENT BLOCK" is engine: you should not need to edit it.
+
+   v1.1 adds GAPPED-TEXT (sentence bank) units, for SPM Paper 1 Part 4 style:
+   one shared bank of sentences (A-H) for all gaps, extras allowed, each sentence
+   fills one gap only (picking a used sentence moves it). Classic 4-option units
+   from v1 still work unchanged, and both kinds can sit in the same file.
+   Also new: optional "defensible" alternative keys, CONFIG.instructions,
+   CONFIG.reportTitle, per-unit intro line, FIT fallback feedback.
+
+   v1.2 adds SUDOKU-STYLE MAYBES to bank units, all on the gap's own A-H
+   buttons (no extra panels): tap once = maybe (dashed, "?"), tap again =
+   answer, tap again = clear. An answered sentence is crossed out as a maybe
+   in every other gap. A gap left with one maybe says "only A left - found the
+   proof word?" (never auto-fills: elimination is a clue, not proof). A gap
+   with none left warns. Optional proof-word box appears once a gap is
+   answered and shows in the report. Maybes are never scored and never read
+   the key. v1.1 saves load unchanged.
+   Maybes are PREVIEWED in the passage gap (newest maybe shown; tap the letters
+   in the gap to swap), so students can compare candidates in context.
+   HIGHLIGHTER: drag across words (or double-click one) in the passage or the
+   sentence bank to highlight clues; tap a highlight to remove the phrase.
+   Saved per unit. Flag: CONFIG.highlighter (default true).
+   GAP NUMBERS under each bank sentence (27 28 29 ...) do exactly what the
+   letter buttons in the gap cards do, so students can assign from the bank
+   without scrolling. Both sides stay in sync.
+   Flags: CONFIG.pencil (maybes, default true), CONFIG.proofWords (default true).
+
+   WHY ONE FILE: a separate content.json cannot be fetched from a file:// page
+   (browsers block it), and these tools must run offline from a shared folder.
+   So the content lives here, fenced off, instead of in a second file.
+
+   ---------------------------------------------------------------- SCHEMA ----
+   CONFIG   : titles, instructions, unit word, storage key, feature flags.
+   SETS[]   : one object per unit (set / paper / round)
+     CLASSIC (cloze / MCQ):
+              { id, title, intro?,
+                paras: ["text with {{9}} placeholders", ...],
+                qs:   [[number, ["A","B","C","D"], keyIndex, altIndex?], ...] }
+              - a question numbered 0 is the worked example (not marked)
+     GAPPED TEXT (sentence bank):
+              { id, title, intro?,
+                paras: ["text with {{27}} placeholders", ...],
+                bank: ["sentence A", "sentence B", ... up to H],
+                qs:   [[number, keyIndex, altIndex?], ...] }
+              - bank indices that are no question's key are the extras
+     - every {{n}} in paras must have a matching qs entry
+     - altIndex (optional) = a defensible alternative. It still scores 0
+       against the key, but the student sees "Defensible - check your
+       teacher's key" instead of a flat wrong.
+   TRANS    : { setId: ["Malay translation of paragraph 1", ...] }  same length as paras
+   GLOSS    : { "english word": "makna" }  difficult passage words, tap to reveal
+   EXP      : { setId: { qNo: { k: "why the key wins",
+                               no: CLASSIC -> ["why A fails","","why C fails","why D fails"]
+                                   BANK    -> { D: "why D fails here", G: "..." },
+                               g: "kata kunci = meaning" } } }
+              - classic: the key's slot in `no` MUST be an empty string
+              - wrap a word in *asterisks* to italicise it
+   FIT      : BANK units only. { setId: { A: "where A belongs / why it is extra", ... } }
+              fallback when a student picks a sentence that has no specific
+              `no` note for that gap. Write one for every letter.
+   OPT      : CLASSIC { setId: { qNo: ["makna A","makna B","makna C","makna D"] } }
+              BANK    { setId: { bank: ["makna A", ... one per sentence] } }
+              - ALL options or none. The engine refuses a partial list, because
+                glossing only the key hands students the answer. Omit pure
+                grammar-form items (offer/offers/offered).
+   --------------------------------------------------------------------------
+
+   ==== CONTENT BLOCK -- EDIT FROM HERE ===================================== */
+
+const CONFIG = {
+  appTitle:      "SPM English Paper 1 \u00b7 Part 4 Practice (Reading Sets 1\u20136)",
+  appSubtitle:   "Gapped text \u00b7 Questions 27\u201332 \u00b7 SM Teknik Alor Setar \u00b7 Zero to Hero 2026",
+  startHeading:  "Part 4 \u2014 Gapped text (missing sentences)",
+  instructions:  "Six sentences have been removed from each article. Choose from the sentences <b>A to H</b> the one which fits each gap <b>(27 to 32)</b>. There are <b>two extra sentences</b> which you do not need to use. Each sentence can fill only one gap.",
+  reportTitle:   "Part 4 Practice \u2014 Result Slip",
+  questionRange: "Questions 27 to 32",
+  unit:          "Set",
+  units:         "sets",
+  storageKey:    "SMTAS_SPM_P1_PART4_ROSTER_v2",
+  supportMode:   true,
+  explanations:  true,       // show Why? / Kenapa? on wrong answers
+  pencil:        true,       // v1.2: tap once = maybe, twice = answer (bank units)
+  proofWords:    true,       // v1.2: optional proof-word box per gap, shown in report
+  highlighter:   true        // v1.2: drag / double-click to highlight words in passage + bank
+};
+
+const SETS = [
+  { id: 1,
+    title: "Shopping as Therapy for Health",
+    intro: "Questions 27 to 32 are based on an article about shopping as therapy for health.",
+    paras: [
+      "Shopping may prolong life, at least for the over-65s in Taiwan, according to recent research. {{27}} Men and women who shopped daily lived longer than those who refrained from retail therapy, say scientists who examined thousands of people over several years.",
+      "According to a report published in the Journal of Epidemiology & Community Health, shopping may provide companionship, exercise and an opportunity to maintain a healthy diet. {{28}} Researchers believe shopping offers a range of social and physical benefits that can improve health outcomes.",
+      "In the study, Dr. Yu-Hung Chang and his team examined the lifestyles of nearly 2,000 men and women aged 65 and over who lived independently. {{29}} Even after adjusting for variables such as age, gender, and existing medical conditions, the link between shopping frequency and survival remained strong.",
+      "Interestingly, they found that regular shoppers were more likely to have better mobility and cognitive function compared to those who rarely shopped. {{30}} This may be because shopping entails walking, decision-making and interpersonal interaction \u2014 all important activities for maintaining health.",
+      "Some researchers argue that shopping may help create a routine and instil a sense of purpose. Engaging in simple activities like browsing and choosing items can give people control over their daily lives, which is essential for mental well-being. {{31}}",
+      "David Oliver, a visiting professor of medicine for older people at City University, London, supported the findings. {{32}} The activities such as walking through shops and socialising while shopping benefit older adults significantly.",
+      "However, experts also advise moderation. Although shopping can promote better health, it should not lead to reckless financial behaviour. Excessive shopping or spending beyond one's means can cause financial stress and negatively impact health."
+    ],
+    bank: [
+      "This finding may explain why some people view shopping as a form of informal exercise.",
+      "These benefits seem to extend beyond simply purchasing goods, supporting emotional and cognitive aspects, too.",
+      "He pointed out that shopping offers light exercise, mental stimulation and social engagement, leading to a longer, healthier life.",
+      "Shopping every day is necessary to achieve these health benefits.",
+      "Shopping is no longer seen as just a leisure activity but also as a health booster.",
+      "The participants were monitored over several years to track the effects of shopping on their health.",
+      "This connection remained even after accounting for other health factors.",
+      "They suggest that such activities help cultivate autonomy and mental resilience."
+    ],
+    qs: [[27,4],[28,1],[29,5],[30,0],[31,7],[32,2]]
+  },
+  { id: 2,
+    title: "Puteri Saadong and the Journey of Sacrifice",
+    intro: "You are going to read an article about a historical legend, Puteri Saadong.",
+    paras: [
+      "In the rich historical landscape of Kelantan, one name stands out as a symbol of grace, wisdom, and sacrifice \u2014 Puteri Saadong. She was the daughter of Raja Loyor of Jembal and the adopted heir of the legendary queen, Che Siti Wan Kembang. Raised within the royal court, she was well-educated in state affairs, traditional healing, and the arts. Upon reaching maturity, she married Raja Abdullah and ascended as queen. {{27}}",
+      "Under their rule, Kelantan flourished economically and culturally. {{28}} Viewing Kelantan as a potential threat, the Siamese king demanded regular tribute as a sign of submission. Raja Abdullah, confident in his sovereignty, refused to comply. This defiance provoked the Siamese kingdom, which responded by launching a military campaign against Kelantan, eventually capturing Raja Abdullah in the conflict.",
+      "Faced with the potential collapse of her kingdom and the imprisonment of her husband, Puteri Saadong made a profoundly courageous decision. {{29}} Her decision was not born of fear but of strategic foresight. She recognised that personal sacrifice might prevent greater suffering and preserve the dignity of Kelantan. The Siamese king welcomed her, captivated by her intelligence and composure.",
+      "During her time in the Siamese palace, Puteri Saadong remained composed and principled. {{30}} As fate would have it, the Siamese king fell gravely ill. His physicians failed to restore his health, and the court fell into despair. Puteri Saadong, skilled in traditional Malay medicine, offered her assistance. Applying her knowledge with care and precision, she gradually nursed the king back to health. His recovery not only reaffirmed her status but also softened his stance toward Kelantan.",
+      "Grateful for her compassion and intellect, the Siamese king granted her freedom and permitted her to return home. Upon her arrival in Kelantan, she resumed her duties with quiet strength. {{31}} She continued to rule from Kota Jelasin, focusing on rebuilding and maintaining peace. Her return symbolised not only the resilience of her spirit but also the endurance of her people.",
+      "In the later years of her life, Puteri Saadong withdrew from active rule and sought spiritual retreat. She relocated to Bukit Marak, a place where she offered healing and counsel to the local community. Eventually, she journeyed to Gunung Ayam, a sacred mountain associated with mysticism and seclusion. It is said that she disappeared there, leaving no trace. {{32}}",
+      "Today, Puteri Saadong is remembered not only as a historical figure but also as a cultural icon. Her life illustrates the complexity of leadership, the strength of personal conviction and the depth of love for one's homeland. From the halls of Kota Jelasin to the quiet slopes of Gunung Ayam, her journey reflects the enduring values of sacrifice, wisdom and national pride. Her story continues to inspire generations, reminding us that true leadership is often defined not by power, but by selflessness and courage in the face of adversity."
+    ],
+    bank: [
+      "She neither surrendered her values nor forgot her responsibilities to her homeland.",
+      "She willingly handed over Kota Jelasin to the Siamese as a peace offering.",
+      "Its growing independence and influence, however, attracted the attention of the powerful Siamese empire.",
+      "Her mysterious departure added to her legacy, blending history with legend and elevating her to an almost mythical status.",
+      "Together, they governed from Kota Jelasin, a fortified city that became the political heart of Kelantan.",
+      "Raja Abdullah led a secret rebellion that rescued Puteri Saadong from Ayutthaya.",
+      "To protect her people and negotiate peace, she agreed to accompany the Siamese forces back to Ayutthaya.",
+      "Though much had changed during her absence, her leadership remained firm."
+    ],
+    qs: [[27,4],[28,2],[29,6],[30,0],[31,7],[32,3]]
+  },
+  { id: 3,
+    title: "The Role of Technology in Weather Forecasting",
+    intro: "Questions 27 to 32 are based on an article about the role of technology in weather forecasting.",
+    paras: [
+      "Weather prediction has become more accurate and helpful in recent years because of technology. In the past, people could only guess the weather by looking at the sky or feeling the wind. Today, scientists use special machines and tools to study the weather and give early warnings to people.",
+      "One important tool for weather prediction is the satellite. Satellites go around the Earth in space and take pictures of clouds, storms, and other weather changes. These pictures help scientists see how the weather is moving. {{27}}",
+      "Another useful machine is the weather radar. A radar sends signals into the sky and receives them back. {{28}} This helps weather experts understand how strong a storm is and how fast it is moving.",
+      "Computers are also very important in weather forecasting. {{29}} Then, it makes a model that shows what the weather might look like in the next few hours or days. These models are very helpful to farmers, travellers, and many others.",
+      "In addition, weather prediction helps save lives. For example, if a big storm is coming, people can leave the area before it gets dangerous. {{30}} Thanks to weather technology, fewer people are surprised by natural disasters.",
+      "Technology also helps people plan their daily lives. {{31}} Farmers can decide when to plant or harvest their crops by checking the weather forecast. This helps them grow more food and lose less.",
+      "Even schools, airports, and sports events use weather forecasts to make safe decisions. A flight can be delayed if a storm is near, and a football game might be moved to another day if heavy rain is expected. {{32}}",
+      "In conclusion, technology has made it easier and faster to predict the weather. It helps people stay safe, plan their activities, and prepare for natural disasters. As technology continues to improve, weather forecasting will become even more useful in the future."
+    ],
+    bank: [
+      "Flood warnings can also help people move to safer places.",
+      "The signals tell when and where it is raining or snowing.",
+      "It stores historical data and is involved in generating future forecasts.",
+      "If someone knows it will rain, they can take an umbrella or stay indoors.",
+      "They can also study temperature and wind patterns from space.",
+      "Knowing the weather in advance helps many people avoid problems.",
+      "They can collect a lot of information from satellites, radars, and weather stations.",
+      "Satellites send signals that change cloud directions from space."
+    ],
+    qs: [[27,4],[28,1],[29,6,2],[30,0],[31,3],[32,5]]
+  },
+  { id: 4,
+    title: "Health Benefits of E-sports for Teenagers",
+    intro: "You are going to read an article on health benefits of e-sports for teenagers.",
+    paras: [
+      "E-sports, or competitive video gaming, has become increasingly popular among teenagers around the world. While some people believe gaming only has negative effects, many studies and personal experiences show that e-sports can offer several health benefits, especially for teenagers. {{27}} It encourages healthy habits when combined with regular exercise, proper rest and time management.",
+      "One of the main health benefits of e-sports is the improvement of thinking skills. {{28}} As a result, players can strengthen their focus, memory and concentration skills that are also useful in school and daily life.",
+      "Another benefit is emotional health. {{29}} By playing games they enjoy, they can improve their mood and reduce anxiety. When they achieve goals in a game, they experience a sense of success and satisfaction, which helps build confidence. {{30}} Too much screen time can lead to eye strain, poor posture and difficulty concentrating on schoolwork.",
+      "E-sports also encourages social interaction and teamwork. Many games are played in teams, where players must communicate, plan and cooperate to win. {{31}} Through online platforms, teenagers can make new friends who share the same interests, helping them feel more connected and less isolated.",
+      "{{32}} For example, many professional e-sports players follow fitness programs to stay healthy and perform better. Teenagers can learn from this and include exercise, good sleep and proper nutrition in their daily lives.",
+      "In conclusion, when practiced responsibly, e-sports can offer many health benefits for teenagers. It helps them grow mentally, emotionally and socially. Parents and teachers can support this interest by encouraging healthy limits and balance."
+    ],
+    bank: [
+      "The popularity of some e-sports titles depends on game updates.",
+      "After a long day at school, playing games can help teenagers relax and feel better physically.",
+      "Although e-sports mostly involves sitting, it can still lead to better physical habits when balanced with healthy routines.",
+      "However, it's important for teens to take regular breaks and avoid long gaming hours to prevent fatigue or burnout.",
+      "This helps teenagers build communication skills and learn how to work with others, even if their teammates are in different countries.",
+      "E-sports can be a great way for teenagers to release stress and relax after a long day at school.",
+      "When practiced in a balanced and responsible way, e-sports can support mental, social and even physical well-being.",
+      "Teenagers who play strategy-based games develop better decision-making abilities, faster reaction times and improved problem-solving skills."
+    ],
+    qs: [[27,6],[28,7],[29,5],[30,3],[31,4],[32,2]]
+  },
+  { id: 5,
+    title: "The Importance of Technology in Our Life",
+    intro: "You are going to read an article about the significance of technology in human existence.",
+    paras: [
+      "In today's fast-moving world, technology plays a very important role in human life. {{27}} Technology has changed the way we communicate, learn, work, and live. It supports the development of the modern world and brings many benefits to society. {{28}}",
+      "One of the most popular technologies today is Artificial Intelligence, or AI. {{29}} It powers digital assistants like Siri or Google Assistant, gives suggestions on what to watch or buy, and helps with directions when we use maps.",
+      "Imagine life without gadgets. Devices like smartphones, computers, and tablets are now a big part of communication and entertainment. {{30}} These devices also come with useful tools like clocks, alarms, timers, and health apps that help us track our fitness and heart rate.",
+      "{{31}} It connects people around the world and provides access to information, education, entertainment, and online shopping. With search engines like Google, you can find answers to almost anything by typing a few words.",
+      "In conclusion, technology is deeply connected to every part of our lives. However, we should use it wisely. {{32}} We must control our use of technology and not let it take over our lives."
+    ],
+    bank: [
+      "AI is used in many areas, such as customer service, online shopping, and health care.",
+      "Users use them to browse the Internet, watch videos, make video calls, do homework, and play games.",
+      "We use it every day, whether at home, school, or work.",
+      "Technology is more essential than human intelligence.",
+      "Human intelligence is still more important than machines.",
+      "From machines and gadgets to apps and software, technology is all around us and helps improve our lives in many ways.",
+      "People are increasingly using AI in various aspects of their lives.",
+      "The Internet is another important part of modern life."
+    ],
+    qs: [[27,2,5],[28,5,2],[29,0,6],[30,1],[31,7],[32,4]]
+  },
+  { id: 6,
+    title: "The Fairy Princess of Mount Ophir",
+    intro: "Questions 27 to 32 are based on an article about a fairy princess.",
+    paras: [
+      "The Fairy princess of Mount Ophir or locally known as the Puteri Gunung Ledang is perhaps one of the most fascinating tales during the reign of Sultan Mansur. {{27}}",
+      "Sultan Mansur once declared to his court that he sought after a wife who shall surpasses all wife of any prince in the world. His ministers reminded him that he was already married to the princess of China and the princess of Java. {{28}} He wished to marry the fairy princess of Gunung Ledang.",
+      "He immediately dispatched his finest warrior, Hang Tuah, together with Sang Setia, Tun Mamat and the other fellow captains to Gunung Ledang. {{29}} Tun Mamat and three men climbed further while Hang Tuah and the others remained.",
+      "After passing through thickets of singing bamboos and reaching a point where the clouds seemed so close to be within reach, Tun Mamat came upon a beautiful garden. There, he found four beautiful women known as the Guardian of the Fairy Princess. Tun Mamat presented the Sultan's marriage proposal and they promised to relay the message. {{30}}",
+      "Later that night, there appeared a hunched old woman told Tun Mamat that if the Sultan of Melaka desired the princess, he had to make for her a bridge of gold and a bridge of silver from Melaka to Gunung Ledang. As for the betrothal gifts should be seven trays of mosquito hearts; seven trays of the hearts of mites; a barrel of water from dried betel nut; a barrel of the tears of virgin maids; a cup of the Sultan's blood; a cup of his son's blood. {{31}}",
+      "Upon hearing the princess's demands, the humbled Sultan said that he could provide all the demands save only the blood of his son. {{32}}",
+      "It is said that the princess remains in the mountain and is still alive to this day."
+    ],
+    bank: [
+      "While climbing the mountain, strong wind hit them, and they couldn't go any higher.",
+      "Tun Mamat and his men descended the Mount without any delay.",
+      "He couldn't bring himself to hurt someone from his own family.",
+      "The journey to Gunung Ledang was long and challenging for the warriors.",
+      "Right after that, they vanished into thin air.",
+      "Located in Johor, Gunung Ledang stands as the highest mountain in Southern Peninsular Malaysia.",
+      "But what he really wanted was a bride that no other kings had.",
+      "They were impossible wishes and, in a quiet way, a bold way to reject the proposal."
+    ],
+    qs: [[27,5],[28,6],[29,0,3],[30,4],[31,7],[32,2]]
+  }
+];
+
+/* Malay translation, one string per paragraph, same order as paras. */
+const TRANS = {
+  1: [
+    "Membeli-belah mungkin memanjangkan usia, sekurang-kurangnya bagi warga berumur lebih 65 tahun di Taiwan, menurut kajian terkini. (27) ____ Lelaki dan wanita yang membeli-belah setiap hari hidup lebih lama berbanding mereka yang menjauhi \u2018terapi membeli-belah\u2019, kata para saintis yang mengkaji ribuan orang selama beberapa tahun.",
+    "Menurut laporan yang diterbitkan dalam Journal of Epidemiology & Community Health, membeli-belah boleh memberikan teman, senaman dan peluang untuk mengekalkan pemakanan yang sihat. (28) ____ Penyelidik percaya membeli-belah menawarkan pelbagai manfaat sosial dan fizikal yang boleh meningkatkan tahap kesihatan.",
+    "Dalam kajian itu, Dr. Yu-Hung Chang dan pasukannya meneliti gaya hidup hampir 2,000 lelaki dan wanita berumur 65 tahun ke atas yang hidup berdikari. (29) ____ Walaupun selepas mengambil kira pemboleh ubah seperti umur, jantina dan masalah kesihatan sedia ada, kaitan antara kekerapan membeli-belah dengan jangka hayat kekal kukuh.",
+    "Menariknya, mereka mendapati bahawa orang yang kerap membeli-belah lebih cenderung mempunyai pergerakan dan fungsi kognitif (daya fikir) yang lebih baik berbanding mereka yang jarang membeli-belah. (30) ____ Ini mungkin kerana membeli-belah melibatkan berjalan kaki, membuat keputusan dan berinteraksi dengan orang lain \u2014 semuanya aktiviti penting untuk menjaga kesihatan.",
+    "Sesetengah penyelidik berpendapat bahawa membeli-belah boleh membantu mewujudkan rutin dan menanam rasa mempunyai tujuan hidup. Melakukan aktiviti mudah seperti melihat-lihat dan memilih barang boleh memberi seseorang kawalan ke atas kehidupan hariannya, dan ini penting untuk kesejahteraan mental. (31) ____",
+    "David Oliver, seorang profesor pelawat dalam bidang perubatan warga emas di City University, London, menyokong dapatan tersebut. (32) ____ Aktiviti seperti berjalan di kedai dan bersosial semasa membeli-belah memberi manfaat yang besar kepada warga emas.",
+    "Namun begitu, pakar juga menasihatkan agar bersederhana. Walaupun membeli-belah boleh menggalakkan kesihatan yang lebih baik, ia tidak sepatutnya membawa kepada tabiat berbelanja secara melulu. Membeli-belah secara berlebihan atau berbelanja melebihi kemampuan boleh menyebabkan tekanan kewangan dan menjejaskan kesihatan."
+  ],
+  2: [
+    "Dalam lanskap sejarah Kelantan yang kaya, satu nama menonjol sebagai simbol keanggunan, kebijaksanaan dan pengorbanan \u2014 Puteri Saadong. Baginda ialah puteri Raja Loyor dari Jembal dan pewaris angkat kepada ratu lagenda, Che Siti Wan Kembang. Dibesarkan dalam istana diraja, baginda berpendidikan tinggi dalam hal ehwal negeri, perubatan tradisional dan kesenian. Apabila dewasa, baginda berkahwin dengan Raja Abdullah dan menaiki takhta sebagai ratu. (27) ____",
+    "Di bawah pemerintahan mereka, Kelantan berkembang maju dari segi ekonomi dan budaya. (28) ____ Melihat Kelantan sebagai satu ancaman, raja Siam menuntut ufti secara berkala sebagai tanda tunduk. Raja Abdullah, yakin dengan kedaulatannya, enggan menurut. Penentangan ini menimbulkan kemarahan kerajaan Siam, yang bertindak balas dengan melancarkan serangan tentera ke atas Kelantan, dan akhirnya menawan Raja Abdullah.",
+    "Berdepan dengan kemungkinan kejatuhan kerajaannya dan pemenjaraan suaminya, Puteri Saadong membuat satu keputusan yang amat berani. (29) ____ Keputusannya bukan lahir daripada rasa takut tetapi daripada pandangan jauh yang strategik. Baginda sedar bahawa pengorbanan peribadi mungkin dapat mengelakkan penderitaan yang lebih besar dan memelihara maruah Kelantan. Raja Siam menyambut baginda, terpikat dengan kebijaksanaan dan ketenangannya.",
+    "Semasa berada di istana Siam, Puteri Saadong kekal tenang dan berpegang pada prinsip. (30) ____ Ditakdirkan, raja Siam jatuh sakit tenat. Tabib-tabibnya gagal memulihkan kesihatan baginda, dan seluruh istana berputus asa. Puteri Saadong, yang mahir dalam perubatan tradisional Melayu, menawarkan bantuan. Dengan menggunakan ilmunya secara teliti dan cermat, baginda beransur-ansur merawat raja sehingga sembuh. Kesembuhan raja bukan sahaja mengukuhkan kedudukan baginda tetapi juga melembutkan pendirian raja terhadap Kelantan.",
+    "Berterima kasih atas belas kasihan dan kebijaksanaannya, raja Siam membebaskan baginda dan membenarkannya pulang. Setibanya di Kelantan, baginda kembali menjalankan tugas dengan kekuatan yang tenang. (31) ____ Baginda terus memerintah dari Kota Jelasin, menumpukan usaha untuk membangunkan semula negeri dan mengekalkan keamanan. Kepulangan baginda melambangkan bukan sahaja ketabahan jiwanya tetapi juga daya tahan rakyatnya.",
+    "Pada tahun-tahun akhir hayatnya, Puteri Saadong berundur daripada pemerintahan dan mencari ketenangan rohani. Baginda berpindah ke Bukit Marak, tempat baginda memberikan rawatan dan nasihat kepada penduduk setempat. Akhirnya, baginda berangkat ke Gunung Ayam, sebuah gunung keramat yang dikaitkan dengan alam mistik dan pengasingan diri. Dikatakan bahawa baginda ghaib di sana tanpa meninggalkan sebarang kesan. (32) ____",
+    "Hari ini, Puteri Saadong dikenang bukan sahaja sebagai tokoh sejarah tetapi juga sebagai ikon budaya. Kehidupannya menggambarkan betapa rumitnya kepimpinan, kekuatan pendirian peribadi dan mendalamnya cinta terhadap tanah air. Dari dewan Kota Jelasin ke lereng sunyi Gunung Ayam, perjalanannya mencerminkan nilai pengorbanan, kebijaksanaan dan kebanggaan negara yang kekal. Kisahnya terus memberi inspirasi kepada generasi demi generasi, mengingatkan kita bahawa kepimpinan sejati sering ditentukan bukan oleh kuasa, tetapi oleh sikap tidak mementingkan diri dan keberanian dalam menghadapi kesusahan."
+  ],
+  3: [
+    "Ramalan cuaca menjadi lebih tepat dan berguna sejak beberapa tahun kebelakangan ini disebabkan teknologi. Dahulu, orang hanya mampu meneka cuaca dengan melihat langit atau merasai angin. Hari ini, saintis menggunakan mesin dan alat khas untuk mengkaji cuaca dan memberikan amaran awal kepada orang ramai.",
+    "Satu alat penting untuk meramal cuaca ialah satelit. Satelit mengelilingi Bumi di angkasa dan mengambil gambar awan, ribut dan perubahan cuaca yang lain. Gambar-gambar ini membantu saintis melihat bagaimana cuaca sedang bergerak. (27) ____",
+    "Satu lagi mesin yang berguna ialah radar cuaca. Radar menghantar isyarat ke langit dan menerimanya semula. (28) ____ Ini membantu pakar cuaca memahami sekuat mana sesuatu ribut dan selaju mana ia bergerak.",
+    "Komputer juga sangat penting dalam ramalan cuaca. (29) ____ Kemudian, ia menghasilkan model yang menunjukkan rupa cuaca dalam beberapa jam atau hari akan datang. Model-model ini sangat membantu petani, pengembara dan ramai lagi.",
+    "Selain itu, ramalan cuaca membantu menyelamatkan nyawa. Contohnya, jika ribut besar akan melanda, orang ramai boleh meninggalkan kawasan itu sebelum keadaan menjadi bahaya. (30) ____ Berkat teknologi cuaca, semakin kurang orang yang terkejut dengan bencana alam.",
+    "Teknologi juga membantu orang merancang kehidupan harian. (31) ____ Petani boleh menentukan bila untuk menanam atau menuai tanaman dengan menyemak ramalan cuaca. Ini membantu mereka menghasilkan lebih banyak makanan dan mengurangkan kerugian.",
+    "Malah sekolah, lapangan terbang dan acara sukan menggunakan ramalan cuaca untuk membuat keputusan yang selamat. Penerbangan boleh ditangguhkan jika ribut menghampiri, dan perlawanan bola sepak mungkin dipindahkan ke hari lain jika hujan lebat dijangka. (32) ____",
+    "Kesimpulannya, teknologi telah menjadikan ramalan cuaca lebih mudah dan pantas. Ia membantu orang ramai kekal selamat, merancang aktiviti dan bersedia menghadapi bencana alam. Apabila teknologi terus bertambah baik, ramalan cuaca akan menjadi lebih berguna pada masa hadapan."
+  ],
+  4: [
+    "E-sukan, atau permainan video secara kompetitif, semakin popular dalam kalangan remaja di seluruh dunia. Walaupun ada yang percaya permainan video hanya membawa kesan negatif, banyak kajian dan pengalaman peribadi menunjukkan bahawa e-sukan boleh memberikan beberapa manfaat kesihatan, terutamanya kepada remaja. (27) ____ Ia menggalakkan tabiat sihat apabila digabungkan dengan senaman yang kerap, rehat yang cukup dan pengurusan masa.",
+    "Salah satu manfaat kesihatan utama e-sukan ialah peningkatan kemahiran berfikir. (28) ____ Hasilnya, pemain boleh memperkukuh tumpuan, daya ingatan dan kemahiran menumpukan perhatian yang juga berguna di sekolah dan dalam kehidupan harian.",
+    "Manfaat lain ialah kesihatan emosi. (29) ____ Dengan bermain permainan yang mereka gemari, mereka boleh memperbaik mood dan mengurangkan kebimbangan. Apabila mereka mencapai matlamat dalam permainan, mereka merasai kejayaan dan kepuasan, yang membantu membina keyakinan diri. (30) ____ Masa skrin yang terlalu lama boleh menyebabkan mata letih, postur badan yang buruk dan sukar menumpukan perhatian pada kerja sekolah.",
+    "E-sukan juga menggalakkan interaksi sosial dan kerja berpasukan. Banyak permainan dimainkan secara berpasukan, dan pemain perlu berkomunikasi, merancang dan bekerjasama untuk menang. (31) ____ Melalui platform dalam talian, remaja boleh berkenalan dengan rakan baharu yang berkongsi minat yang sama, membantu mereka berasa lebih terhubung dan kurang terasing.",
+    "(32) ____ Contohnya, ramai pemain e-sukan profesional mengikuti program kecergasan untuk kekal sihat dan beraksi dengan lebih baik. Remaja boleh belajar daripada perkara ini dan memasukkan senaman, tidur yang cukup dan pemakanan seimbang dalam kehidupan harian mereka.",
+    "Kesimpulannya, apabila diamalkan secara bertanggungjawab, e-sukan boleh memberikan banyak manfaat kesihatan kepada remaja. Ia membantu mereka berkembang dari segi mental, emosi dan sosial. Ibu bapa dan guru boleh menyokong minat ini dengan menggalakkan had yang sihat dan keseimbangan."
+  ],
+  5: [
+    "Dalam dunia yang bergerak pantas hari ini, teknologi memainkan peranan yang sangat penting dalam kehidupan manusia. (27) ____ Teknologi telah mengubah cara kita berkomunikasi, belajar, bekerja dan hidup. Ia menyokong pembangunan dunia moden dan membawa banyak manfaat kepada masyarakat. (28) ____",
+    "Salah satu teknologi yang paling popular hari ini ialah Kecerdasan Buatan, atau AI. (29) ____ Ia menggerakkan pembantu digital seperti Siri atau Google Assistant, memberikan cadangan tentang apa yang hendak ditonton atau dibeli, dan membantu memberi arah apabila kita menggunakan peta.",
+    "Bayangkan hidup tanpa gajet. Peranti seperti telefon pintar, komputer dan tablet kini menjadi sebahagian besar daripada komunikasi dan hiburan. (30) ____ Peranti-peranti ini juga dilengkapi dengan alat berguna seperti jam, penggera, pemasa dan aplikasi kesihatan yang membantu kita memantau kecergasan dan kadar denyutan jantung.",
+    "(31) ____ Ia menghubungkan orang di seluruh dunia dan memberikan akses kepada maklumat, pendidikan, hiburan dan beli-belah dalam talian. Dengan enjin carian seperti Google, anda boleh mencari jawapan bagi hampir apa sahaja dengan menaip beberapa perkataan.",
+    "Kesimpulannya, teknologi berkait rapat dengan setiap aspek kehidupan kita. Namun begitu, kita harus menggunakannya dengan bijak. (32) ____ Kita mesti mengawal penggunaan teknologi dan tidak membiarkannya menguasai hidup kita."
+  ],
+  6: [
+    "Puteri Gunung Ledang (Fairy Princess of Mount Ophir) mungkin salah satu kisah paling menarik pada zaman pemerintahan Sultan Mansur. (27) ____",
+    "Sultan Mansur pernah mengisytiharkan kepada pembesar istana bahawa baginda mahukan seorang isteri yang mengatasi semua isteri putera raja di dunia. Para menteri mengingatkan baginda bahawa baginda sudah pun berkahwin dengan puteri dari China dan puteri dari Jawa. (28) ____ Baginda ingin mengahwini puteri Gunung Ledang.",
+    "Baginda segera menghantar pahlawannya yang terhebat, Hang Tuah, bersama Sang Setia, Tun Mamat dan para hulubalang lain ke Gunung Ledang. (29) ____ Tun Mamat dan tiga orang lelaki terus mendaki manakala Hang Tuah dan yang lain tinggal di belakang.",
+    "Selepas melalui rumpun buluh perindu (buluh yang \u2018menyanyi\u2019) dan tiba di satu tempat di mana awan seolah-olah boleh dicapai dengan tangan, Tun Mamat menemui sebuah taman yang indah. Di situ, dia bertemu empat orang wanita cantik yang dikenali sebagai penjaga Puteri Gunung Ledang. Tun Mamat menyampaikan pinangan Sultan dan mereka berjanji untuk menyampaikan pesanan itu. (30) ____",
+    "Pada malam itu, muncul seorang nenek tua yang bongkok lalu memberitahu Tun Mamat bahawa jika Sultan Melaka mahukan puteri itu, baginda perlu membina untuknya sebuah jambatan emas dan sebuah jambatan perak dari Melaka ke Gunung Ledang. Sebagai barang hantaran pula, mestilah ada tujuh dulang hati nyamuk; tujuh dulang hati hama; setong air pinang kering; setong air mata anak dara; secawan darah Sultan; dan secawan darah putera baginda. (31) ____",
+    "Apabila mendengar permintaan puteri itu, Sultan yang kini merendah diri berkata bahawa baginda mampu memenuhi semua permintaan kecuali darah puteranya. (32) ____",
+    "Dikatakan bahawa puteri itu masih tinggal di gunung tersebut dan masih hidup hingga ke hari ini."
+  ]
+};
+
+/* Difficult passage words. Tap to reveal. Lowercase keys. */
+const GLOSS = {
+  "prolong": "memanjangkan", "refrained": "menahan diri daripada", "retail therapy": "terapi membeli-belah",
+  "companionship": "teman / persahabatan", "outcomes": "hasil", "lived independently": "hidup berdikari",
+  "variables": "pemboleh ubah", "frequency": "kekerapan", "survival": "kelangsungan hidup",
+  "mobility": "keupayaan bergerak", "cognitive function": "fungsi kognitif (daya fikir)", "entails": "melibatkan",
+  "interpersonal interaction": "interaksi dengan orang lain", "instil": "menanam / memupuk",
+  "sense of purpose": "rasa ada tujuan hidup", "browsing": "melihat-lihat", "well-being": "kesejahteraan",
+  "moderation": "kesederhanaan", "reckless": "melulu", "beyond one's means": "melebihi kemampuan",
+  "sacrifice": "pengorbanan", "heir": "pewaris", "ascended": "menaiki (takhta)", "flourished": "berkembang maju",
+  "tribute": "ufti", "submission": "tanda tunduk", "sovereignty": "kedaulatan", "comply": "menurut",
+  "defiance": "penentangan", "provoked": "mencetuskan kemarahan", "imprisonment": "pemenjaraan",
+  "profoundly": "amat sangat", "foresight": "pandangan jauh", "dignity": "maruah", "composure": "ketenangan",
+  "composed": "tenang", "principled": "berpegang pada prinsip", "gravely ill": "sakit tenat",
+  "despair": "putus asa", "reaffirmed": "mengukuhkan semula", "stance": "pendirian", "intellect": "kebijaksanaan",
+  "resilience": "ketabahan", "endurance": "daya tahan", "spiritual retreat": "berundur untuk ketenangan rohani",
+  "seclusion": "pengasingan diri", "mysticism": "alam mistik", "conviction": "pendirian / keyakinan",
+  "adversity": "kesusahan", "selflessness": "sikap tidak mementingkan diri",
+  "accurate": "tepat", "early warnings": "amaran awal", "receives": "menerima", "harvest": "menuai",
+  "natural disasters": "bencana alam", "delayed": "ditangguhkan",
+  "competitive": "kompetitif / bersaing", "concentration": "tumpuan", "anxiety": "kebimbangan",
+  "satisfaction": "kepuasan", "eye strain": "mata letih", "posture": "postur / kedudukan badan",
+  "isolated": "terasing", "nutrition": "pemakanan", "time management": "pengurusan masa",
+  "fast-moving": "bergerak pantas", "artificial intelligence": "kecerdasan buatan",
+  "digital assistants": "pembantu digital", "gadgets": "gajet", "search engines": "enjin carian",
+  "take over": "menguasai", "wisely": "dengan bijak", "heart rate": "kadar denyutan jantung",
+  "reign": "zaman pemerintahan", "surpasses": "mengatasi", "dispatched": "menghantar", "warrior": "pahlawan",
+  "thickets": "belukar / rumpun", "relay": "menyampaikan", "hunched": "bongkok",
+  "betrothal gifts": "barang hantaran", "mites": "hama", "betel nut": "buah pinang", "barrel": "tong",
+  "humbled": "merendah diri", "save only": "kecuali"
+};
+
+/* Three-layer feedback. `no` is keyed by the sentence letter the student picked. */
+const EXP = {
+  1: {
+    27: { k: "The sentence before makes a big claim from *recent research* (shopping may prolong life). E sums up what that means \u2014 shopping is now seen as a *health booster* \u2014 and the next sentence gives the proof (people who shopped daily lived longer).",
+          no: { D: "D says *these health benefits*, but no benefits have been listed yet \u2014 this is the very first paragraph. It also goes too far: the article never says daily shopping is *necessary*.",
+                G: "G says *This connection remained*, but no connection has been tested yet. The idea of other factors comes later, in paragraph 3.",
+                B: "B starts with *These benefits*, but paragraph 1 has not listed any benefits yet. The list (companionship, exercise, healthy diet) comes in paragraph 2." },
+          g: "health booster = penggalak kesihatan" },
+    28: { k: "The sentence before lists three benefits (*companionship, exercise, healthy diet*). B picks them up with *These benefits* and adds two more aspects \u2014 *emotional and cognitive*.",
+          no: { E: "E is a general opening claim. Here we already have a detailed list, so E adds nothing new and breaks the flow from the list to the researchers' view.",
+                A: "A talks about *This finding*, but paragraph 2 gives a list of benefits, not a research finding.",
+                D: "D says daily shopping is *necessary*. The article only says shopping *may* help \u2014 D is too extreme." },
+          g: "extend beyond = melangkaui" },
+    29: { k: "The sentence before introduces the study's *participants* (2,000 people aged 65+). F tells us what happened to them \u2014 they were *monitored over several years*. Then the next sentence reports the result: the link *remained strong*.",
+          no: { G: "G says *This connection remained even after accounting for other health factors* \u2014 but the very next sentence says exactly that (*Even after adjusting for variables\u2026 the link remained strong*). Using G repeats the same idea twice.",
+                A: "A says *This finding*, but no finding has been reported yet \u2014 the gap comes right after the method, before any result." },
+          g: "monitored = dipantau" },
+    30: { k: "The sentence before gives a *finding* (regular shoppers had better mobility). A refers to it as *This finding* and links it to exercise. The next sentence then explains why: *This may be because shopping entails walking\u2026*",
+          no: { G: "G talks about a *connection* that *remained* after other factors \u2014 that is the statistics idea from paragraph 3, not this paragraph about mobility and thinking.",
+                H: "H starts with *They suggest\u2026 such activities*, but no activities have been named yet. The activities (walking, decision-making) come in the next sentence." },
+          g: "finding = dapatan" },
+    31: { k: "The sentence before talks about *simple activities like browsing and choosing items* and *mental well-being*. H refers back to them as *such activities*, *They* = the researchers, and it adds *autonomy* (control) and *mental resilience*.",
+          no: { B: "B talks about *These benefits*, but this paragraph is about routine and control, not a list of benefits.",
+                C: "C starts with *He pointed out*, but no man is mentioned in this paragraph \u2014 only *Some researchers*. *He* = David Oliver, who appears in the next paragraph." },
+          g: "autonomy = kebebasan mengawal hidup sendiri" },
+    32: { k: "The sentence before introduces *David Oliver*, who *supported the findings*. C uses *He pointed out* to report what he said. The next sentence (*The activities such as walking\u2026 and socialising*) picks up C's *light exercise* and *social engagement*.",
+          no: { H: "H says *They suggest*, but the person here is one man \u2014 David Oliver. *They* does not match a single person.",
+                A: "A talks about *This finding*, but we need to know what David Oliver said, not a new finding." },
+          g: "pointed out = menegaskan" }
+  },
+  2: {
+    27: { k: "The sentence before says she *married Raja Abdullah*. E begins with *Together, they* \u2014 the new couple \u2014 and names *Kota Jelasin*, which comes back later (*She continued to rule from Kota Jelasin*).",
+          no: { C: "C starts with *Its growing independence* \u2014 *Its* needs a kingdom just before it, and the passage has not said Kelantan was growing yet. That comes next: *Kelantan flourished*.",
+                B: "B has her handing Kota Jelasin to the Siamese, but later she *continued to rule from Kota Jelasin*. B contradicts the passage." },
+          g: "governed = memerintah" },
+    28: { k: "The sentence before says *Kelantan flourished*. C picks this up with *Its growing independence and influence*, and *however* signals the problem: it *attracted the attention* of Siam. The next sentence shows that attention \u2014 Siam sees Kelantan as a *threat*.",
+          no: { E: "E is about the couple ruling *together* \u2014 it belongs right after the marriage, not after *Kelantan flourished*. It also does not lead into the Siamese threat.",
+                B: "B has her giving the city away as a peace offering, but there is no war yet at this point, and later she still rules from Kota Jelasin." },
+          g: "attracted the attention = menarik perhatian" },
+    29: { k: "The sentence before says she made *a profoundly courageous decision* but not what it was. G tells us: she *agreed to accompany the Siamese forces back to Ayutthaya*. The next sentences explain it (*Her decision was not born of fear\u2026*) and show the result (*The Siamese king welcomed her*).",
+          no: { B: "B is a decision too, but the passage never says she gave away Kota Jelasin \u2014 she later *continued to rule* from there. And the king *welcomed her*, so she must have gone to Siam.",
+                F: "F says Raja Abdullah rescued her, but she has not even gone to Siam yet. Later the passage says the king *granted her freedom* \u2014 no rescue was needed." },
+          g: "accompany = mengiringi / mengikut" },
+    30: { k: "The sentence before says she stayed *composed and principled* in the Siamese palace. A explains what *principled* means here: she *neither surrendered her values nor forgot her responsibilities to her homeland*.",
+          no: { H: "H talks about her *absence* and things that *had changed* \u2014 that only makes sense after she returns home (paragraph 5).",
+                F: "F says she was rescued, but the passage goes on with her still in the palace, nursing the king back to health \u2014 and he later frees her himself." },
+          g: "neither\u2026 nor = bukan\u2026 dan bukan juga" },
+    31: { k: "The sentence before says she is back home and *resumed her duties with quiet strength*. H adds a contrast \u2014 *much had changed during her absence* \u2014 but *her leadership remained firm*. The next sentence continues: she *continued to rule*.",
+          no: { A: "A is about staying loyal while away from home \u2014 it fits the Siamese palace (paragraph 4), not her return.",
+                E: "E says *Together, they governed*, but this paragraph is only about her, and *Together* needs two people mentioned just before." },
+          g: "absence = ketiadaan" },
+    32: { k: "The sentence before says she *disappeared there, leaving no trace*. D calls this *Her mysterious departure* and says it turned her into a near-legend \u2014 which leads into the last paragraph about her as a *cultural icon*.",
+          no: { H: "H says *her leadership remained firm*, but she has already withdrawn from ruling here \u2014 there is no leadership left to describe." },
+          g: "mysterious departure = pemergian yang misteri" }
+  },
+  3: {
+    27: { k: "The paragraph is about *satellites* and what they see from space. E uses *They* (= satellites) and *also* to add one more job: studying *temperature and wind patterns from space*.",
+          no: { H: "H mentions satellites and space, so it looks right \u2014 but it is false. Satellites take pictures of the weather; they cannot *change* cloud directions. Watch out for sentences that copy key words but twist the facts.",
+                G: "G says *They can collect information from satellites, radars\u2026* \u2014 satellites cannot collect information from themselves, and radars have not even been introduced yet. G is about computers." },
+          g: "patterns = corak" },
+    28: { k: "The sentence before says a radar *sends signals* and *receives them back*. B continues with *The signals* and says what they tell us. The next sentence (*This helps weather experts\u2026*) then follows naturally.",
+          no: { H: "H is about signals, but it is about *satellites*, not radar, and the claim (changing cloud directions) is false.",
+                E: "E's *They* would point back to the signals \u2014 but signals do not *study* anything, and E is about space, not radar." },
+          g: "signals = isyarat" },
+    29: { k: "The paragraph is about computers. G gives the first step \u2014 computers *collect a lot of information from satellites, radars, and weather stations* (the tools from the paragraphs before). *Then* the next sentence gives the second step: it *makes a model*.",
+          no: { C: "C also fits the topic of computers, and its *It* matches the *it* in *Then, it makes a model*. Many teachers would accept it. But G shows the clearer step-by-step order: collect information \u2192 *Then* make a model.",
+                B: "B is about *The signals* \u2014 that is radar, from the paragraph before. This paragraph is about computers." },
+          g: "collect = mengumpul" },
+    30: { k: "The paragraph is about how forecasts *save lives* \u2014 people leave before a storm. A adds another example with *also*: *Flood warnings* help people *move to safer places*.",
+          no: { D: "D is about taking an umbrella \u2014 a small daily choice. This paragraph is about saving lives in disasters, so D is too small for the topic. D belongs in the paragraph about *daily lives*.",
+                F: "F is a general summary about avoiding problems. It fits better after the list of examples about schools, airports and sports." },
+          g: "safer places = tempat yang lebih selamat" },
+    31: { k: "The topic sentence says technology helps people *plan their daily lives*. D gives the first, simplest example \u2014 an *umbrella* or *staying indoors*. The next sentence adds a second example: farmers.",
+          no: { A: "A is about floods and moving to safer places \u2014 that is about saving lives (paragraph 5), not daily planning.",
+                F: "F is a summary sentence. It works after a list of examples, not before the first one." },
+          g: "stay indoors = duduk di dalam rumah" },
+    32: { k: "The paragraph lists examples: a delayed flight, a football match moved to another day. F rounds them off with a summary: *Knowing the weather in advance helps many people avoid problems*.",
+          no: { D: "D is about one person and an umbrella. This paragraph is about organisations (schools, airports, sports events), and the gap needs a summary of those examples.",
+                A: "A is about flood warnings. The examples here are about delayed flights and moved matches, not floods." },
+          g: "in advance = lebih awal" }
+  },
+  4: {
+    27: { k: "The sentence before says e-sports *can offer several health benefits*. G explains when: *in a balanced and responsible way*, and names the kinds of well-being. The next sentence (*It encourages healthy habits when combined with\u2026*) continues the same balanced idea.",
+          no: { C: "C is also about balance, but it only talks about *physical* habits and starts with *Although\u2026 sitting*. The physical point has its own paragraph later (gap 32), where C introduces the fitness example.",
+                A: "A is about game updates and popularity \u2014 nothing to do with the health benefits this paragraph is building up to." },
+          g: "well-being = kesejahteraan" },
+    28: { k: "The topic sentence names *thinking skills*. H gives the detail \u2014 *decision-making, faster reaction times, problem-solving*. The next sentence starts *As a result*, so the gap must be a cause: playing strategy games builds these skills.",
+          no: { F: "F is about stress and relaxing \u2014 that is *emotional* health, the topic of the next paragraph.",
+                E: "E's *This helps teenagers build communication skills* is about teamwork. Communication is a social skill, not a thinking skill." },
+          g: "decision-making = membuat keputusan" },
+    29: { k: "The topic sentence names *emotional health*. F links e-sports to emotions \u2014 *release stress and relax*. The next sentence continues: *By playing games they enjoy, they can improve their mood*.",
+          no: { B: "B is a strong trap \u2014 it also mentions relaxing after school. But it ends with *feel better physically*. This paragraph is about *emotional* health, so *physically* breaks the link.",
+                D: "D gives a warning (*However\u2026 take regular breaks*). Nothing negative has been mentioned yet, so *However* has nothing to contrast with." },
+          g: "release stress = melepaskan tekanan" },
+    30: { k: "The sentence after the gap is negative: *Too much screen time can lead to eye strain\u2026* D sets this up with *However* (a turn away from the positives) and the advice to *take regular breaks* to avoid *fatigue or burnout*.",
+          no: { C: "C starts with *Although e-sports mostly involves sitting*, which hints at a problem \u2014 but then turns positive (*better physical habits*). The next sentence is about screen-time dangers, so a positive turn does not fit.",
+                G: "G is a positive summary. The paragraph is switching to the risks, so G goes the wrong way." },
+          g: "burnout = keletihan melampau" },
+    31: { k: "The sentence before is about teams who *communicate, plan and cooperate*. E refers back with *This helps* and adds *teammates in different countries*. That leads into the next sentence: *Through online platforms, teenagers can make new friends*.",
+          no: { H: "H is about strategy games and thinking skills \u2014 that is paragraph 2's topic. This paragraph is about social skills." },
+          g: "teammates = rakan sepasukan" },
+    32: { k: "The next sentence starts *For example, many professional e-sports players follow fitness programs*. So the gap must be the main idea that this example proves. C gives it: even though e-sports *involves sitting*, it can lead to *better physical habits*.",
+          no: { B: "B mentions *physically*, which looks right, but it is about relaxing after school. The example that follows is about fitness programs, not relaxing.",
+                G: "G is a general summary. The example after the gap is specifically about physical habits, so the gap needs a physical point." },
+          g: "physical habits = tabiat fizikal" }
+  },
+  5: {
+    27: { k: "The sentence before says technology plays an important role *in human life*. C shows how close that is \u2014 *We use it every day, whether at home, school, or work* \u2014 before the next sentence widens out to *communicate, learn, work, and live*.",
+          no: { F: "F also fits this paragraph, and many teachers would accept it here. This key puts F at the *end* of the paragraph instead, because it sums up (*helps improve our lives in many ways*) after *brings many benefits*.",
+                D: "D says technology is *more essential than human intelligence*, but the conclusion argues the opposite. D contradicts the writer's view." },
+          g: "whether\u2026 or = sama ada\u2026 atau" },
+    28: { k: "The sentence before says technology *brings many benefits to society*. F closes the paragraph with a summary \u2014 technology is *all around us* and *helps improve our lives in many ways*.",
+          no: { C: "C also fits this paragraph, and many teachers would accept it here. This key puts C straight after *important role in human life*, where *We use it every day* gives the first example.",
+                H: "H says *another important part* \u2014 it opens a new topic. It belongs at the start of the Internet paragraph, not at the end of the introduction." },
+          g: "all around us = di sekeliling kita" },
+    29: { k: "The sentence before introduces *AI*. A keeps AI as the subject (*AI is used in many areas*), so the *It* in the next sentence (*It powers digital assistants*) clearly points back to AI.",
+          no: { G: "G also fits, and many teachers would accept it. But in G the subject is *People*, so the next sentence's *It powers\u2026* has to reach back past *People* to find AI. A gives the cleaner pronoun link.",
+                E: "E is about human intelligence versus machines \u2014 that is the conclusion's warning, not a description of what AI does." },
+          g: "areas = bidang" },
+    30: { k: "The sentence before names *smartphones, computers, and tablets*. B refers to them as *them* and lists what users do with them. The next sentence starts *These devices also*, adding more uses \u2014 so B must give the first set of uses.",
+          no: { H: "H is about the Internet, which has its own paragraph next. Here the topic is the devices themselves.",
+                F: "F is a general summary about technology. This paragraph needs specific uses of the devices, because the next sentence says *These devices also\u2026*" },
+          g: "browse = melayari" },
+    31: { k: "The gap opens a new paragraph and the next sentence says *It connects people around the world*. H introduces the new topic \u2014 *The Internet* \u2014 with *another important part*, so *It* = the Internet.",
+          no: { A: "A is about AI, which was the topic two paragraphs ago. AI does not *connect people around the world* \u2014 the Internet does.",
+                C: "C's *We use it every day* has no clear *it* at the start of a new paragraph, and it never names the Internet, which this paragraph is about." },
+          g: "another = satu lagi" },
+    32: { k: "The sentence before says *we should use it wisely*. E gives the reason \u2014 *Human intelligence is still more important than machines*. The next sentence follows: *We must control our use of technology*.",
+          no: { D: "D says the opposite \u2014 technology is *more essential than human intelligence*. That clashes with *We must control our use of technology and not let it take over our lives*. Read for the writer's opinion, not just the topic words." },
+          g: "still more important = masih lebih penting" }
+  },
+  6: {
+    27: { k: "The sentence before names *Puteri Gunung Ledang*. F gives background about the place itself \u2014 *Located in Johor, Gunung Ledang\u2026* \u2014 which suits the end of an introduction, before the story begins.",
+          no: { D: "D talks about *the journey* and *the warriors*, but no journey or warriors have appeared yet. They are sent in paragraph 3.",
+                G: "G starts with *But what he really wanted*, which needs someone's wishes just before it. The Sultan's wishes come in paragraph 2." },
+          g: "located = terletak" },
+    28: { k: "The ministers remind the Sultan that he already has wives from *China and Java*. G turns with *But*: what he *really wanted* was a bride *no other kings had*. The next sentence names her \u2014 *the fairy princess of Gunung Ledang*.",
+          no: { C: "C is about not hurting *his own family* \u2014 that is his answer to the demand for his son's blood at the end of the story, not his wish to marry.",
+                H: "H talks about *impossible wishes*, but no wishes or demands have been made yet." },
+          g: "bride = pengantin perempuan" },
+    29: { k: "The warriors set off for Gunung Ledang. The next sentence says only Tun Mamat and three men *climbed further* while Hang Tuah and the others *remained*. A explains why the group split up \u2014 a *strong wind* stopped them.",
+          no: { D: "D also fits the climb, and many teachers would accept it. But D does not explain why Hang Tuah and the others stayed behind \u2014 A does (*strong wind hit them*).",
+                B: "B has Tun Mamat going *down* the mountain, but the next sentence says he *climbed further*." },
+          g: "strong wind = angin kencang" },
+    30: { k: "The four women promised to *relay the message*. E finishes the scene: *Right after that, they vanished into thin air* \u2014 the magic tells us these are no ordinary women. Then, *Later that night*, an old woman appears.",
+          no: { B: "B has Tun Mamat leaving the mountain at once \u2014 but the next paragraph says that *later that night* the old woman *told Tun Mamat* the demands, so he was still there.",
+                A: "A is about the climb being stopped by wind. Tun Mamat has already reached the garden, so the climbing is over." },
+          g: "vanished = ghaib / lenyap" },
+    31: { k: "The paragraph ends with a list of demands no one could meet (a bridge of gold, mosquito hearts, tears\u2026). H calls them *impossible wishes* and explains their real purpose \u2014 *a bold way to reject the proposal*.",
+          no: { C: "C reacts to the demand for his son's blood, but the Sultan has not heard the demands yet \u2014 that happens in the next paragraph (*Upon hearing the princess's demands\u2026*).",
+                G: "G is about what the Sultan *really wanted* \u2014 his wish, from paragraph 2. Here we need a comment on the princess's demands." },
+          g: "impossible = mustahil" },
+    32: { k: "The Sultan could provide everything *save only the blood of his son*. C gives the reason: *He couldn't bring himself to hurt someone from his own family*.",
+          no: { H: "H is a comment on the demands (*impossible wishes*). It belongs right after the list of demands \u2014 not after the Sultan's reply.",
+                E: "E says *they vanished*, but the only person in this paragraph is the Sultan. *They* has nothing to point back to." },
+          g: "couldn't bring himself to = tidak sanggup" }
+  }
+};
+
+/* Fallback feedback for any sentence picked in the wrong gap. One per letter. */
+const FIT = {
+  1: { A: "A belongs in gap 30. It needs a *finding* right before it (better mobility for regular shoppers).",
+       B: "B belongs in gap 28. *These benefits* needs a list of benefits right before it.",
+       C: "C belongs in gap 32. *He pointed out* needs one man mentioned just before \u2014 David Oliver.",
+       D: "D is an extra sentence. It says daily shopping is *necessary*, but the article only says shopping *may* help \u2014 the claim is too strong.",
+       E: "E belongs in gap 27. It is a big-picture claim that fits the opening, before the evidence.",
+       F: "F belongs in gap 29. It describes the study's method (*monitored over several years*), right after the participants are introduced.",
+       G: "G is an extra sentence. Its idea (*remained even after accounting for other factors*) is already in paragraph 3 \u2014 using it would repeat the text.",
+       H: "H belongs in gap 31. *They* = the researchers and *such activities* = browsing and choosing items." },
+  2: { A: "A belongs in gap 30. It explains *principled* \u2014 she stayed loyal to her homeland while in the Siamese palace.",
+       B: "B is an extra sentence. The passage later says she *continued to rule from Kota Jelasin*, so she never handed it over.",
+       C: "C belongs in gap 28. *Its* = Kelantan, which has just *flourished*, and *however* leads into the Siamese threat.",
+       D: "D belongs in gap 32. *Her mysterious departure* needs her disappearance just before it.",
+       E: "E belongs in gap 27. *Together, they* = Puteri Saadong and Raja Abdullah, who have just married.",
+       F: "F is an extra sentence. The passage says the Siamese king *granted her freedom* \u2014 nobody rescued her.",
+       G: "G belongs in gap 29. It explains what the *courageous decision* was.",
+       H: "H belongs in gap 31. *During her absence* only makes sense once she has come home." },
+  3: { A: "A belongs in gap 30, the paragraph about saving lives during disasters.",
+       B: "B belongs in gap 28. *The signals* needs the radar's signals right before it.",
+       C: "C is the extra sentence on this key, but it is a near-miss: it also describes computers. See gap 29.",
+       D: "D belongs in gap 31 \u2014 the simplest example of planning your *daily life*.",
+       E: "E belongs in gap 27. *They* = satellites, and *also* adds another job they do from space.",
+       F: "F belongs in gap 32. It is a summary, so it comes after the examples (flights, football).",
+       G: "G belongs in gap 29. It is the first thing computers do, before *Then, it makes a model*.",
+       H: "H is an extra sentence. It copies key words (satellites, signals, space) but the fact is false \u2014 satellites cannot change clouds." },
+  4: { A: "A is an extra sentence. Game updates and popularity are not a health benefit \u2014 A is off-topic.",
+       B: "B is an extra sentence. It mixes relaxing (emotional) with *feel better physically*, so it fits neither the emotional paragraph nor the fitness paragraph.",
+       C: "C belongs in gap 32. It is the physical-health idea that the fitness example proves.",
+       D: "D belongs in gap 30. *However* turns to the risks, just before *Too much screen time*.",
+       E: "E belongs in gap 31. *This* = teamwork, and *different countries* leads to making friends online.",
+       F: "F belongs in gap 29, the paragraph about *emotional health*.",
+       G: "G belongs in gap 27. It explains how e-sports offers health benefits \u2014 *in a balanced and responsible way*.",
+       H: "H belongs in gap 28. It is the cause, and the next sentence starts *As a result*." },
+  5: { A: "A belongs in gap 29. It keeps *AI* as the subject, so *It powers digital assistants* points back to it.",
+       B: "B belongs in gap 30. *Them* = smartphones, computers and tablets.",
+       C: "C belongs in gap 27 (many keys accept C and F swapped in gaps 27 and 28). *It* = technology.",
+       D: "D is an extra sentence. It contradicts the conclusion: we must control technology and not let it take over.",
+       E: "E belongs in gap 32. It gives the reason we must *use it wisely*.",
+       F: "F belongs in gap 28 (many keys accept C and F swapped in gaps 27 and 28). It sums up the introduction.",
+       G: "G is the extra sentence on this key, but it is a near-miss for gap 29. See the note there.",
+       H: "H belongs in gap 31. It introduces the Internet, which the next sentence describes." },
+  6: { A: "A belongs in gap 29. It explains why Hang Tuah and the others stayed behind.",
+       B: "B is an extra sentence. Tun Mamat is still on the mountain that night, when the old woman speaks to him.",
+       C: "C belongs in gap 32. It explains why the Sultan refused to give his son's blood.",
+       D: "D is the extra sentence on this key, but it is a near-miss for gap 29. See the note there.",
+       E: "E belongs in gap 30. *They* = the four women, who vanish after promising to relay the message.",
+       F: "F belongs in gap 27, as background about the mountain before the story begins.",
+       G: "G belongs in gap 28. *But* turns from the wives he already has to the bride he really wanted.",
+       H: "H belongs in gap 31, right after the list of impossible demands." }
+};
+
+/* Sentence glossing: all eight per set (never only the key). Pronouns kept
+   ambiguous on purpose -- resolving "they/it" is the skill being tested. */
+const OPT = {
+  1: { bank: [
+    "Dapatan ini mungkin menjelaskan mengapa sesetengah orang menganggap membeli-belah sebagai satu bentuk senaman tidak formal.",
+    "Manfaat-manfaat ini nampaknya melangkaui sekadar membeli barang, malah turut menyokong aspek emosi dan kognitif.",
+    "Beliau menegaskan bahawa membeli-belah menawarkan senaman ringan, rangsangan minda dan interaksi sosial, yang membawa kepada hidup yang lebih panjang dan sihat.",
+    "Membeli-belah setiap hari adalah wajib untuk mendapat manfaat kesihatan ini.",
+    "Membeli-belah bukan lagi dilihat sekadar aktiviti masa lapang tetapi juga sebagai penggalak kesihatan.",
+    "Para peserta dipantau selama beberapa tahun untuk menjejaki kesan membeli-belah terhadap kesihatan mereka.",
+    "Kaitan ini kekal walaupun selepas faktor kesihatan lain diambil kira.",
+    "Mereka mencadangkan bahawa aktiviti sebegini membantu memupuk sikap berdikari dan daya tahan mental." ] },
+  2: { bank: [
+    "Baginda tidak pernah menggadaikan nilai dirinya dan tidak juga melupakan tanggungjawabnya terhadap tanah air.",
+    "Baginda dengan rela menyerahkan Kota Jelasin kepada Siam sebagai tanda damai.",
+    "Namun, kebebasan dan pengaruhnya yang semakin berkembang menarik perhatian empayar Siam yang berkuasa.",
+    "Pemergiannya yang penuh misteri menambah warisannya, menggabungkan sejarah dengan lagenda dan mengangkatnya ke taraf yang hampir seperti mitos.",
+    "Bersama-sama, mereka memerintah dari Kota Jelasin, sebuah kota berkubu yang menjadi pusat politik Kelantan.",
+    "Raja Abdullah mengetuai pemberontakan rahsia yang menyelamatkan Puteri Saadong dari Ayutthaya.",
+    "Demi melindungi rakyatnya dan merundingkan keamanan, baginda bersetuju mengikut tentera Siam pulang ke Ayutthaya.",
+    "Walaupun banyak yang telah berubah semasa ketiadaannya, kepimpinan baginda tetap teguh." ] },
+  3: { bank: [
+    "Amaran banjir juga boleh membantu orang ramai berpindah ke tempat yang lebih selamat.",
+    "Isyarat itu memberitahu bila dan di mana hujan atau salji sedang turun.",
+    "Ia menyimpan data sejarah (data cuaca lampau) dan terlibat dalam menghasilkan ramalan masa depan.",
+    "Jika seseorang tahu hari akan hujan, dia boleh membawa payung atau duduk di dalam rumah.",
+    "Ia juga boleh mengkaji suhu dan corak angin dari angkasa.",
+    "Mengetahui keadaan cuaca lebih awal membantu ramai orang mengelakkan masalah.",
+    "Ia boleh mengumpul banyak maklumat daripada satelit, radar dan stesen cuaca.",
+    "Satelit menghantar isyarat yang mengubah arah awan dari angkasa." ] },
+  4: { bank: [
+    "Populariti sesetengah permainan e-sukan bergantung pada kemas kini permainan.",
+    "Selepas seharian di sekolah, bermain permainan boleh membantu remaja berehat dan berasa lebih baik dari segi fizikal.",
+    "Walaupun e-sukan kebanyakannya melibatkan duduk, ia masih boleh membawa kepada tabiat fizikal yang lebih baik apabila diseimbangkan dengan rutin yang sihat.",
+    "Namun begitu, remaja perlu berehat secara berkala dan mengelakkan bermain terlalu lama untuk mencegah keletihan atau 'burnout' (lesu melampau).",
+    "Ini membantu remaja membina kemahiran berkomunikasi dan belajar bekerjasama dengan orang lain, walaupun rakan sepasukan mereka berada di negara yang berbeza.",
+    "E-sukan boleh menjadi cara yang baik untuk remaja melepaskan tekanan dan berehat selepas seharian di sekolah.",
+    "Apabila diamalkan secara seimbang dan bertanggungjawab, e-sukan boleh menyokong kesejahteraan mental, sosial dan juga fizikal.",
+    "Remaja yang bermain permainan berasaskan strategi membina keupayaan membuat keputusan yang lebih baik, masa tindak balas yang lebih pantas dan kemahiran menyelesaikan masalah yang lebih baik." ] },
+  5: { bank: [
+    "AI digunakan dalam banyak bidang, seperti khidmat pelanggan, beli-belah dalam talian dan penjagaan kesihatan.",
+    "Pengguna menggunakannya untuk melayari Internet, menonton video, membuat panggilan video, membuat kerja rumah dan bermain permainan.",
+    "Kita menggunakannya setiap hari, sama ada di rumah, di sekolah atau di tempat kerja.",
+    "Teknologi lebih penting daripada kecerdasan manusia.",
+    "Kecerdasan manusia masih lebih penting daripada mesin.",
+    "Daripada mesin dan gajet hingga aplikasi dan perisian, teknologi ada di sekeliling kita dan membantu memperbaik kehidupan kita dalam pelbagai cara.",
+    "Semakin ramai orang menggunakan AI dalam pelbagai aspek kehidupan mereka.",
+    "Internet ialah satu lagi bahagian penting dalam kehidupan moden." ] },
+  6: { bank: [
+    "Semasa mendaki gunung, angin kencang melanda mereka, dan mereka tidak dapat mendaki lebih tinggi lagi.",
+    "Tun Mamat dan orang-orangnya turun dari gunung tanpa berlengah.",
+    "Baginda tidak sanggup menyakiti ahli keluarganya sendiri.",
+    "Perjalanan ke Gunung Ledang panjang dan mencabar bagi para pahlawan.",
+    "Sejurus selepas itu, mereka ghaib begitu sahaja.",
+    "Terletak di Johor, Gunung Ledang ialah gunung tertinggi di selatan Semenanjung Malaysia.",
+    "Tetapi apa yang benar-benar baginda mahukan ialah seorang pengantin yang tidak dimiliki oleh raja-raja lain.",
+    "Semua itu ialah permintaan yang mustahil dan, secara halus, satu cara yang berani untuk menolak pinangan itu." ] }
+};
+
+/* ==== END CONTENT BLOCK -- engine below ==================================== */
+
+const LTR = "ABCDEFGH".split("");
+const KEY = CONFIG.storageKey;
+const U = CONFIG.unit;
+const FITS = (typeof FIT !== "undefined") ? FIT : {};
+const isBank = set => Array.isArray(set.bank);
+const QS = set => set.qs.map(q => isBank(set)
+  ? { n:q[0], opts:set.bank, key:q[1], alt:(q[2] === undefined ? null : q[2]) }
+  : { n:q[0], opts:q[1],     key:q[2], alt:(q[3] === undefined ? null : q[3]) });
+const qOf = (set,n) => QS(set).find(x=>x.n===n);
+const marksOf = set => set.qs.filter(q=>q[0]!==0).length;
+const TOTAL = SETS.reduce((a,s)=>a+marksOf(s), 0);
+const HAS_EX = SETS.some(s=>s.qs.some(q=>q[0]===0));
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmt = s => esc(s).replace(/\*([^*]+)\*/g, "<i>$1</i>");
+const PENCIL = CONFIG.pencil !== false;       /* v1.2: sudoku-style pencil grid on BANK units */
+const PROOF  = CONFIG.proofWords !== false;   /* v1.2: optional proof-word box per gap        */
+const HILITE = CONFIG.highlighter !== false;  /* v1.2: drag/double-click to highlight words    */
+const HAS_BANK = SETS.some(isBank);
+
+let S = { name:"", klass:"", idx:0, sets:{}, done:false, support:false, unlocked:{}, draft:{}, pencil:{}, proof:{}, preview:{}, hl:{} };
+
+/* option / sentence gloss -- all-or-none is enforced here, not just documented */
+function optGloss(set, i, n){
+  const o = OPT[String(set.id)]; if(!o) return null;
+  const arr = isBank(set) ? o.bank : o[String(n)];
+  const want = isBank(set) ? set.bank.length : (qOf(set,n) || {opts:[]}).opts.length;
+  if(!Array.isArray(arr) || arr.length !== want || arr.some(x=>!x)) return null;
+  return arr[i];
+}
+
+/* ---------- Malay glossary: single-pass wrap so inserted markup is never re-matched ---------- */
+let GRE = null;
+function gre(){
+  if(GRE) return GRE;
+  const keys = Object.keys(GLOSS).sort((a,b)=>b.length-a.length)
+    .map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  GRE = keys.length ? new RegExp("\\b(" + keys.join("|") + ")\\b","gi") : /$^/;
+  return GRE;
+}
+function glossify(t){
+  return t.replace(gre(), m=>{
+    const v = GLOSS[m.toLowerCase()];
+    if(!v) return m;
+    return '<span class="gw" data-m="' + v.replace(/"/g,"&quot;") + '">' + m + '</span>';
+  });
+}
+
+/* ---------- explanation block (G8: kill the distractor, then secure the key) ---------- */
+function expBlock(setId, n, picked, open){
+  if(!CONFIG.explanations) return "";
+  const set = SETS.find(x=>x.id===setId);
+  const q = qOf(set, n);
+  const bank = isBank(set);
+  const e = (EXP[String(setId)] || {})[String(n)] || null;
+  const lab = i => bank ? LTR[i] : LTR[i] + ' (' + esc(q.opts[i]) + ')';
+  let trap = "";
+  if(picked !== null && picked !== undefined && picked !== q.key){
+    if(e && e.no) trap = Array.isArray(e.no) ? (e.no[picked] || "") : (e.no[LTR[picked]] || "");
+    if(!trap && bank) trap = (FITS[String(setId)] || {})[LTR[picked]] || "";
+  }
+  if(!e && !trap) return "";
+  let h = '<details class="why"'+(open?" open":"")+'><summary>Why? &middot; Kenapa?</summary><div class="whybody">';
+  if(q.alt !== null && picked === q.alt){
+    h += '<p class="wl alt">\u2696\uFE0F <b>Defensible answer.</b> Your choice can be argued, so check your teacher\u2019s key. '
+       + 'The notes below explain why this key prefers ' + LTR[q.key] + '.</p>';
+  }
+  if(trap) h += '<p class="wl trap">\u2702\uFE0F <b>Why ' + lab(picked) + (q.alt === picked ? ' is weaker' : ' fails') + ':</b> ' + fmt(trap) + '</p>';
+  if(e && e.k) h += '<p class="wl keyline">\u2705 <b>Why ' + lab(q.key) + ' wins:</b> ' + fmt(e.k) + '</p>';
+  if(e && e.g) h += '<p class="wl kata">\uD83D\uDCD6 <b>Kata kunci:</b> ' + fmt(e.g) + '</p>';
+  return h + '</div></details>';
+}
+
+function unlockedCount(){
+  let n = 0;
+  Object.keys(S.unlocked || {}).forEach(k=>{ n += (S.unlocked[k]||[]).length; });
+  return n;
+}
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){
+  try{ const r = localStorage.getItem(KEY); if(r){ const o = JSON.parse(r); if(o && o.sets) S = o; } }catch(e){}
+  S.unlocked = S.unlocked || {}; S.draft = S.draft || {}; S.support = !!S.support;
+  S.pencil = S.pencil || {}; S.proof = S.proof || {}; S.preview = S.preview || {}; S.hl = S.hl || {};  /* older saves migrate */
+}
+function wipe(){ try{ localStorage.removeItem(KEY); }catch(e){} }
+
+/* ---------- v1.2 pencil marks + proof words (student-made only: nothing here reads the key) ---------- */
+const candOf  = (sid,n) => ((S.pencil[sid] || {})[n] || []).slice().sort((a,b)=>a-b);
+const proofOf = (sid,n) => ((S.proof[sid] || {})[n] || "").trim();
+function toggleCand(sid,n,i){
+  S.pencil[sid] = S.pencil[sid] || {};
+  const a = S.pencil[sid][n] || [];
+  const k = a.indexOf(i);
+  if(k > -1) a.splice(k,1); else a.push(i);
+  if(a.length) S.pencil[sid][n] = a; else delete S.pencil[sid][n];
+}
+const emptyHint = n => PENCIL ? 'Tap a letter once for a maybe, twice to answer.'
+  : 'Tap a letter to put that sentence in gap ' + n + '.';
+/* status line under an unanswered gap: maybes, "only one left", or "none left" */
+function maybeHint(sid, n, owner){
+  const c = candOf(sid,n);
+  if(!PENCIL || !c.length) return emptyHint(n);
+  const live = c.filter(i=>owner[i] === undefined || owner[i] === n);
+  if(live.length === 1) return '<span class="one">\u26A1 Only <b>' + LTR[live[0]] + '</b> is left of your maybes. It is shown in the passage. Found the proof word? Tap ' + LTR[live[0]] + ' again to answer.</span>';
+  if(live.length === 0) return '<span class="zero">\u26D4 Your maybes are all used in other gaps. Recheck those answers.</span>';
+  const pv = previewOf(sid, n, owner);
+  return '\u270F\uFE0F Maybes: <b>' + live.map(i=>LTR[i]).join(' \u00B7 ') + '</b>. '
+       + (pv !== null ? 'Trying <b>' + LTR[pv] + '</b> in the passage (tap the letters in the gap to swap). ' : '')
+       + 'Tap one again here to answer.';
+}
+/* which maybe is shown in the blank: the one the student picked, else the newest live one */
+function previewOf(sid, n, owner){
+  const raw = (S.pencil[sid] || {})[n] || [];
+  const live = raw.filter(i=>owner[i] === undefined);
+  if(!live.length) return null;
+  const want = (S.preview[sid] || {})[n];
+  return live.indexOf(want) > -1 ? want : live[live.length-1];
+}
+function paintPreview(set, n, owner){
+  const el = document.getElementById('blk-'+set.id+'-'+n);
+  if(!el) return false;
+  const pv = previewOf(set.id, n, owner);
+  if(pv === null) return false;
+  const c = candOf(set.id, n);
+  const tabs = c.map(i=>{
+    const out = owner[i] !== undefined && owner[i] !== n;
+    return out ? '<span class="pvb out">' + LTR[i] + '</span>'
+               : '<span class="pvb' + (i === pv ? ' on' : '') + '" data-q="'+n+'" data-i="'+i+'" title="Try ' + LTR[i] + ' in this gap">' + LTR[i] + '</span>';
+  }).join("");
+  el.className = 'blk prev';
+  el.innerHTML = '<span class="pvh">(' + n + ') \u270F\uFE0F ' + tabs + '</span> <span class="pvs">' + esc(set.bank[pv]) + '</span>';
+  return true;
+}
+function pencilTag(sid, n, owner){
+  const c = candOf(sid,n);
+  if(!c.length) return "";
+  return ' <span class="pmk" title="Your maybes">\u270F\uFE0F ' + c.map(i=>{
+    const out = owner && owner[i] !== undefined && owner[i] !== n;
+    return out ? '<s>' + LTR[i] + '</s>' : LTR[i];
+  }).join(" \u00B7 ") + '</span>';
+}
+
+/* ---------- context extraction for the mistake report ---------- */
+function contextFor(set, n){
+  const para = set.paras.find(p => p.indexOf("{{"+n+"}}") > -1) || "";
+  const parts = para.split("{{"+n+"}}");
+  const before = parts[0].replace(/\{\{\d+\}\}/g, "\u2026").trim().split(/\s+/).filter(Boolean);
+  const after  = (parts[1]||"").replace(/\{\{\d+\}\}/g, "\u2026").trim().split(/\s+/).filter(Boolean);
+  const W = isBank(set) ? 14 : 9;
+  const L = before.slice(-W).join(" ");
+  const R = after.slice(0, W).join(" ");
+  return (before.length > W ? "\u2026 " : "") + esc(L) + " <b>(" + n + ") ____</b> " + esc(R) + (after.length > W ? " \u2026" : "");
+}
+
+/* ---------- passage blanks ---------- */
+function blankHTML(set, n, i){
+  if(isBank(set)) return '<span class="bltr">(' + n + ') ' + LTR[i] + '</span>' + esc(set.bank[i]);
+  return '(' + n + ') ' + esc(qOf(set,n).opts[i]);
+}
+function paintBlank(set, n, i, cls, marks){
+  const el = document.getElementById('blk-'+set.id+'-'+n);
+  if(!el) return;
+  if(i === null || i === undefined){ el.className = 'blk'; el.innerHTML = '(' + n + ') ______' + (marks || ""); return; }
+  el.innerHTML = blankHTML(set, n, i);
+  el.className = 'blk ' + (isBank(set) ? 'ins ' : '') + cls;
+}
+
+/* ---------- rendering ---------- */
+function progressBar(){
+  return '<div class="prog">' + SETS.map((s,i)=>{
+    const cls = S.sets[s.id] ? "done" : (i === S.idx && !S.done ? "now" : "");
+    const tick = S.sets[s.id] ? " \u2713" : "";
+    return '<div class="pill '+cls+'">'+U+' '+s.id+tick+'</div>';
+  }).join("") + '</div>';
+}
+
+function renderStart(){
+  const instr = CONFIG.instructions ||
+    'Read each passage and choose the <b>best</b> answer <b>A</b>, <b>B</b>, <b>C</b> or <b>D</b> for every blank.';
+  document.getElementById("app").innerHTML =
+  '<div class="card narrow">'
+  + '<h2>' + esc(CONFIG.startHeading) + '</h2>'
+  + '<p class="sub">' + SETS.length + ' ' + CONFIG.units + ' &middot; ' + marksOf(SETS[0])
+  + ' questions each &middot; ' + TOTAL + ' marks total</p>'
+  + '<p style="font-size:.93rem;margin:16px 0 0">' + instr
+  + (HAS_EX ? ' Question <b>(0)</b> is done for you as an example and is not marked.' : '') + '</p>'
+  + ((HAS_BANK && PENCIL) ? '<p style="font-size:.93rem;margin:10px 0 0">\u270F\uFE0F <b>Not sure yet?</b> Tap a letter <b>once</b> to mark it as a maybe, like scribbling on the exam paper. '
+     + 'Tap it <b>again</b> to make it your answer. Your maybes appear in the gap so you can compare them, and once a sentence is an answer, it is crossed out as a maybe in the other gaps. Only answers are scored.</p>' : '')
+  + (HILITE ? '<p style="font-size:.93rem;margin:10px 0 0">\uD83D\uDD8D\uFE0F <b>Highlight clues</b> in the passage and the sentences: drag across words or double-click one. Tap a highlight to remove it.</p>' : '')
+  + '<p style="font-size:.93rem;margin:10px 0 0">Submit a ' + U.toLowerCase() + ' to see your score and the correct answers. '
+  + 'After all ' + SETS.length + ' ' + CONFIG.units + ' you get a full report card with every question you got wrong.</p>'
+  + '<label class="fld" for="cl">Your class</label><select id="cl"><option value="">Choose your class</option></select>'
+  + '<label class="fld" for="nm">Your name</label><select id="nm" disabled><option value="">Choose your class first</option></select>'
+  + '<p class="roster-note">Choose only your own name. Your teacher receives your answers and scores with an automatic timestamp. This is practice, not an official exam.</p>'
+  + '<p class="roster-note">'+esc(rosterError || (roster.length ? 'Roster connected. Missing name? Ask your teacher to update the roster.' : 'Loading roster…'))+'</p>'
+  + (CONFIG.supportMode ? '<div class="suprow' + (S.support?" on":"") + '" id="suprow"><div class="box">' + (S.support?"\u2713":"") + '</div>'
+  + '<div class="txt"><b>\uD83C\uDDF2\uD83C\uDDFE Bantuan Bahasa Melayu (support mode)</b>'
+  + 'Turn this on to translate any paragraph into Malay and tap difficult words for their meaning. '
+  + 'Leave it off for real exam conditions. You can switch it anytime.</div></div>' : '')
+  + '<div id="warn"></div>'
+  + '<div class="btnrow"><button id="go">Start ' + U + ' ' + SETS[0].id + ' &rarr;</button></div>'
+  + '</div>';
+  const nm = document.getElementById("nm"), cl = document.getElementById("cl");
+  [...new Set(roster.map(r=>r.klass))].sort().forEach(c=>cl.add(new Option(c,c)));
+  cl.value = S.klass || '';
+  function fillNames(){
+    nm.replaceChildren(new Option(cl.value ? 'Choose your name' : 'Choose your class first',''));
+    roster.filter(r=>r.klass===cl.value).sort((a,b)=>a.name.localeCompare(b.name)).forEach(r=>nm.add(new Option(r.name,r.id)));
+    nm.disabled=!cl.value; if(S.studentId)nm.value=S.studentId;
+  }
+  fillNames();cl.onchange=()=>{S.klass=cl.value;S.name='';S.studentId='';fillNames();};
+  nm.onchange=()=>{const r=roster.find(r=>r.id===nm.value&&r.klass===cl.value);S.studentId=r?.id||'';S.name=r?.name||'';};
+  const suprow = document.getElementById("suprow");
+  if(suprow) suprow.onclick = ()=>{S.support=!S.support;renderStart();};
+  if(!CONFIG.supportMode) S.support=false;
+  document.getElementById("go").disabled=!roster.length;
+  document.getElementById("go").onclick = ()=>{
+    const r=roster.find(r=>r.id===nm.value&&r.klass===cl.value);
+    if(!r){document.getElementById("warn").innerHTML='<div class="note">Please choose your class and your own name first.</div>';return;}
+    S.studentId=r.id;S.name=r.name;S.klass=r.klass;ensureAttempt();save();render();
+  };
+  paintSync();
+}
+
+function renderSet(){
+  const set = SETS[S.idx];
+  const bank = isBank(set);
+  const saved = S.sets[set.id] || null;
+  const locked = !!saved;
+  const qs = QS(set);
+
+  let html = '<div class="card">' + progressBar()
+    + '<div style="margin-top:16px"><span class="badge">' + U + ' ' + set.id + '</span></div>'
+    + '<h2 style="margin-top:8px">' + esc(set.title) + '</h2>'
+    + '<p class="sub">' + esc(CONFIG.questionRange) + ' &middot; ' + marksOf(set) + ' marks'
+    + (bank ? ' &middot; ' + (set.bank.length - marksOf(set)) + ' extra sentences' : '') + '</p>'
+    + (set.intro ? '<p class="instr">' + esc(set.intro) + '</p>' : '')
+    + (HILITE ? '<div class="hlbar no-print"><span>\uD83D\uDD8D\uFE0F <b>Highlight clues:</b> drag across words, or double-click one. Tap a highlight to remove it.</span>'
+              + '<button type="button" class="ghost hlclr" id="hlclr">Clear highlights</button></div>' : '');
+
+  /* ---- left pane: passage ---- */
+  html += '<div class="split">'
+       +  '<div class="pane"><div class="panehead">Passage'
+       +  (CONFIG.supportMode
+             ? '<span class="sw' + (S.support?" on":"") + '" id="supsw">\uD83C\uDDF2\uD83C\uDDFE BM '
+               + (S.support?"on":"off") + '</span>'
+             : '<span class="hint">tap a gap to jump &rarr;</span>') + '</div>'
+       +  '<div class="panebody" id="ppane">';
+  html += '<div class="passage"><p class="ptitle">' + esc(set.title) + '</p>';
+  set.paras.forEach((p,pi)=>{
+    let t = esc(p);
+    if(S.support) t = glossify(t);
+    t = t.replace(/\{\{(\d+)\}\}/g, (m,n)=>{
+      n = +n;
+      if(n === 0){
+        const q = qOf(set,0);
+        return '<span class="blk ex">' + blankHTML(set, 0, q.key) + '</span>';
+      }
+      return '<span class="blk" id="blk-'+set.id+'-'+n+'">(' + n + ') ______</span>';
+    });
+    html += '<p data-hk="p'+pi+'">' + t + (S.support ? ' <span class="bmbtn" data-p="'+pi+'">BM</span>' : '') + '</p>';
+    if(S.support && TRANS[set.id] && TRANS[set.id][pi]){
+      const op = (S.unlocked[set.id] || []).indexOf(pi) > -1;
+      html += '<div class="bm' + (op?" show":"") + '" id="bm-'+set.id+'-'+pi+'">'
+            + '<span class="lbl">Terjemahan &middot; perenggan ' + (pi+1) + '</span>'
+            + esc(TRANS[set.id][pi]) + '</div>';
+    }
+  });
+  html += '</div></div></div>';
+
+  /* ---- right pane: answers ---- */
+  html += '<div class="pane"><div class="panehead">'
+       +  (bank ? 'Answers &middot; one sentence per gap' : 'Answers &middot; choose A, B, C or D')
+       +  '<span class="hint" id="count"></span></div>'
+       +  '<div class="panebody" id="qpane">';
+
+  if(bank){
+    html += '<div class="bankbox"><h4>Sentences A\u2013' + LTR[set.bank.length-1] + '</h4>';
+    set.bank.forEach((s,i)=>{
+      const g = S.support ? optGloss(set, i, null) : null;
+      let ut;
+      if(locked){
+        const home = qs.find(x=>x.key===i);
+        ut = home ? '<span class="ut ok">Gap ' + home.n + '</span>' : '<span class="ut xt">Extra</span>';
+      } else ut = '<span class="ut" id="ut-'+set.id+'-'+i+'"></span>';
+      const qrow = locked ? '' : '<div class="qn" aria-label="Put sentence ' + LTR[i] + ' in a gap">'
+            + qs.filter(x=>x.n !== 0).map(x=>'<button type="button" class="qb" data-q="'+x.n+'" data-i="'+i+'" aria-label="Sentence '+LTR[i]+' for gap '+x.n+'">'+x.n+'</button>').join("")
+            + '</div>';
+      html += '<div class="bs" id="bs-'+set.id+'-'+i+'"><span class="bl">' + LTR[i] + '</span>'
+            + '<div class="bt" data-hk="b'+i+'">' + esc(s) + (g ? '<br><span class="omy">' + esc(g) + '</span>' : '') + '</div>' + ut + qrow + '</div>';
+    });
+    html += '</div>';
+    if(PENCIL && !locked) html += '<div class="legend"><b>Tap a gap number under a sentence, or a letter below:</b> once = <span class="lg m">27</span> maybe &middot; twice = <span class="lg p">27</span> answer &middot; again = clear</div>';
+  }
+
+  qs.forEach(q=>{
+    const n = q.n, opts = q.opts, key = q.key;
+    const isEx = n === 0;
+    const draft = (S.draft || {})[set.id] || {};
+    const picked = saved ? saved.answers[n] : (n in draft ? draft[n] : null);
+    const isAlt = locked && q.alt !== null && picked === q.alt;
+    let cls = "q";
+    if(isEx) cls += " example";
+    else if(locked) cls += (picked === key ? " right" : isAlt ? " altq" : " wrong");
+    html += '<div class="'+cls+'" id="q-'+set.id+'-'+n+'">';
+    html += '<div class="qhead"><span class="qnum">'+n+'</span>';
+    html += isEx ? '<span style="color:#12824a">Example &mdash; not marked</span>'
+                 : '<span style="color:#5d6b7a;font-weight:600">' + (bank ? 'Gap' : 'Blank') + ' ('+n+')</span>';
+    if(locked && !isEx){
+      html += picked === key ? '<span class="mark ok">\u2713 Correct</span>'
+            : isAlt ? '<span class="mark alt">\u2248 Defensible &middot; 0 marks on this key</span>'
+                    : '<span class="mark bad">\u00D7 Wrong</span>';
+    }
+    html += '</div>';
+
+    if(bank){
+      html += '<div class="chips">' + opts.map((o,i)=>{
+        let c = "chip";
+        if(isEx || locked){
+          if(i === key) c += " key";
+          else if(i === picked) c += (i === q.alt ? " altk" : " miss");
+          else c += " dim";
+        } else if(picked === i) c += " sel";
+        if(locked && PENCIL && candOf(set.id,n).indexOf(i) > -1) c += " wm";
+        return '<button type="button" class="'+c+'" data-q="'+n+'" data-i="'+i+'"'
+             + ((isEx || locked) ? ' disabled' : '') + ' aria-label="Sentence '+LTR[i]+' for gap '+n+'">'
+             + LTR[i] + '<span class="on"></span></button>';
+      }).join("") + '</div>';
+      let pk;
+      if(locked && !isEx){
+        pk = picked === key
+          ? '<b class="c">' + LTR[key] + '</b> ' + esc(opts[key])
+          : 'You: <b class="y">' + LTR[picked] + '</b> ' + esc(opts[picked]) + '<br>Key: <b class="c">' + LTR[key] + '</b> ' + esc(opts[key]);
+      } else if(isEx){
+        pk = '<b>' + LTR[key] + '</b> ' + esc(opts[key]);
+      } else pk = emptyHint(n);
+      html += '<div class="pick" id="pick-'+set.id+'-'+n+'">' + pk + '</div>';
+      if(locked && !isEx && PENCIL && picked !== key && candOf(set.id,n).length)
+        html += '<div class="proofv">\u270F\uFE0F Your maybes: <b>' + candOf(set.id,n).map(i=>LTR[i]).join(", ") + '</b>'
+              + (candOf(set.id,n).indexOf(key) > -1 ? ' (the key was one of them)' : ' (the key was not one of them)') + '</div>';
+      if(PROOF && !isEx){
+        if(!locked){
+          html += '<input type="text" class="proof" id="pf-'+set.id+'-'+n+'" data-q="'+n+'" maxlength="90" autocomplete="off"'
+                + ' placeholder="Proof word (optional), e.g. These = the lamps" value="' + esc(proofOf(set.id,n)).replace(/"/g,"&quot;") + '">';
+        } else if(proofOf(set.id,n)){
+          html += '<div class="proofv">\uD83D\uDD0E Your proof: <i>' + esc(proofOf(set.id,n)) + '</i></div>';
+        }
+      }
+    } else {
+      html += '<div class="opts">';
+      opts.forEach((o,i)=>{
+        let ocls = "opt", tag = "";
+        if(isEx){
+          ocls += " locked" + (i === key ? " key" : "");
+          if(i === key) tag = '<span class="tag">Answer</span>';
+        } else if(locked){
+          ocls += " locked";
+          if(i === key){ ocls += " key"; tag = '<span class="tag">Answer</span>'; }
+          else if(i === picked){ ocls += " miss"; tag = '<span class="tag">' + (isAlt ? 'You &middot; defensible' : 'You') + '</span>'; }
+        } else if(picked === i){ ocls += " sel"; }
+        const dis = (isEx || locked) ? " disabled" : "";
+        const chk = (isEx && i === key) || (i === picked) ? " checked" : "";
+        const og = S.support ? optGloss(set, i, n) : null;
+        const olab = og ? esc(o) + '<br><span class="omy">' + esc(og) + '</span>' : esc(o);
+        html += '<label class="'+ocls+'" data-s="'+set.id+'" data-q="'+n+'" data-i="'+i+'">'
+              + '<input type="radio" name="s'+set.id+'q'+n+'" value="'+i+'"'+dis+chk+'>'
+              + '<span class="ltr">'+LTR[i]+'</span><span>'+olab+'</span>'+tag+'</label>';
+      });
+      html += '</div>';
+    }
+    if(locked && !isEx && picked !== key) html += expBlock(set.id, n, picked, false);
+    html += '</div>';
+  });
+
+  html += '</div></div></div>';
+
+  html += '<div id="setmsg"></div>';
+  html += '<div class="btnrow no-print">';
+  if(!locked){
+    html += '<button id="submit">Submit ' + U + ' ' + set.id + '</button>';
+  } else {
+    const last = S.idx === SETS.length - 1;
+    html += '<button id="next">' + (last ? 'See my full report \u2192'
+          : 'Next: ' + U + ' ' + SETS[S.idx+1].id + ' \u2192') + '</button>';
+  }
+  html += '</div></div>';
+
+  document.getElementById("app").innerHTML = html;
+  if(HILITE) hlSetup(set);
+
+  /* BM support switch (keeps drafted answers, which live in S.draft) */
+  const supsw = document.getElementById("supsw");
+  if(supsw) supsw.onclick = ()=>{ S.support = !S.support; save(); render(); };
+
+  /* per-paragraph Malay translation toggles */
+  document.querySelectorAll(".bmbtn").forEach(b=>{
+    b.onclick = ev=>{
+      ev.stopPropagation();
+      const pi = +b.dataset.p;
+      const d = document.getElementById('bm-'+set.id+'-'+pi);
+      if(!d) return;
+      const now = !d.classList.contains("show");
+      d.classList.toggle("show", now);
+      S.unlocked[set.id] = S.unlocked[set.id] || [];
+      if(now && S.unlocked[set.id].indexOf(pi) < 0) S.unlocked[set.id].push(pi);
+      save();
+    };
+  });
+
+  /* tap a blank in the passage to jump to its question in the right pane */
+  document.querySelectorAll('.blk[id]').forEach(b=>{
+    b.title = "Jump to this question";
+    b.onclick = ev=>{
+      if(ev.target && ev.target.closest && ev.target.closest(".gw")) return;
+      const n = b.id.split("-")[2];
+      const c = document.getElementById('q-'+set.id+'-'+n);
+      if(!c) return;
+      c.scrollIntoView({behavior:"smooth", block:"center"});
+      c.classList.add("flash");
+      setTimeout(()=>c.classList.remove("flash"), 1000);
+    };
+  });
+
+  if(locked){
+    qs.forEach(q=>{
+      if(q.n === 0) return;
+      const p = saved.answers[q.n];
+      paintBlank(set, q.n, p, p === q.key ? 'ex' : (q.alt !== null && p === q.alt) ? 'altb' : 'bad');
+    });
+    const b = document.getElementById("next");
+    if(b) b.onclick = ()=>{
+      if(S.idx === SETS.length - 1){ S.done = true; } else { S.idx++; }
+      save(); render(); window.scrollTo(0,0);
+    };
+    renderBanner(saved.score, marksOf(set));
+    return;
+  }
+
+  /* live answering -- drafts persist so toggling BM never wipes picks */
+  const picks = Object.assign({}, (S.draft || {})[set.id] || {});
+  const keep = ()=>{ S.draft = S.draft || {}; S.draft[set.id] = picks; save(); };
+  const updateCount = ()=>{
+    const c = document.getElementById("count");
+    if(c) c.textContent = Object.keys(picks).length + " / " + marksOf(set) + " answered";
+  };
+
+  if(bank){
+    const refresh = ()=>{
+      const owner = {};
+      Object.keys(picks).forEach(m=>{ owner[picks[m]] = +m; });
+      qs.forEach(q=>{
+        if(q.n === 0) return;
+        const p = picks[q.n];
+        document.querySelectorAll('.chip[data-q="'+q.n+'"]').forEach(ch=>{
+          const i = +ch.dataset.i, own = owner[i];
+          const taken = own !== undefined && own !== q.n;
+          ch.classList.toggle("sel", p === i);
+          ch.classList.toggle("taken", taken);
+          const isC = candOf(set.id, q.n).indexOf(i) > -1;
+          ch.classList.toggle("cand", isC && p !== i);
+          ch.classList.toggle("elim", isC && taken);
+          ch.querySelector(".on").textContent = taken ? own : "";
+          ch.title = taken ? "Used in gap " + own + (PENCIL ? " \u2014 tap twice to move it here" : " \u2014 tap to move it here")
+                   : (isC && p !== i) ? "Maybe \u2014 tap again to answer" : "";
+        });
+        const pk = document.getElementById('pick-'+set.id+'-'+q.n);
+        if(pk) pk.innerHTML = p === undefined ? maybeHint(set.id, q.n, owner)
+                                              : '<b>' + LTR[p] + '</b> ' + esc(set.bank[p]);
+        if(!(PENCIL && p === undefined && paintPreview(set, q.n, owner)))
+          paintBlank(set, q.n, p === undefined ? null : p, 'filled', PENCIL ? pencilTag(set.id, q.n, owner) : "");
+        const card = document.getElementById('q-'+set.id+'-'+q.n);
+        if(card && p !== undefined) card.classList.remove("unanswered");
+        const pf = document.getElementById('pf-'+set.id+'-'+q.n);
+        if(pf) pf.style.display = (p !== undefined || pf.value.trim()) ? "" : "none";   /* proof box appears once answered */
+      });
+      set.bank.forEach((s,i)=>{
+        const own = owner[i];
+        const u = document.getElementById('ut-'+set.id+'-'+i);
+        const bs = document.getElementById('bs-'+set.id+'-'+i);
+        if(u) u.textContent = own !== undefined ? "\u2192 Gap " + own : "";
+        if(bs) bs.classList.toggle("used", own !== undefined);
+        document.querySelectorAll('.qb[data-i="'+i+'"]').forEach(b=>{
+          const n = +b.dataset.q, isC = candOf(set.id, n).indexOf(i) > -1;
+          const elsewhere = own !== undefined && own !== n;
+          b.classList.toggle("sel", picks[n] === i);
+          b.classList.toggle("cand", isC && picks[n] !== i);
+          b.classList.toggle("elim", isC && elsewhere);
+          b.classList.toggle("full", picks[n] !== undefined && picks[n] !== i && !isC);   /* gap already answered with another sentence */
+          b.title = picks[n] === i ? LTR[i] + " is your answer for gap " + n + " (tap to clear)"
+                  : isC ? "Maybe for gap " + n + " (tap again to answer)"
+                  : picks[n] !== undefined ? "Gap " + n + " has " + LTR[picks[n]] + " (tap to try " + LTR[i] + " as a maybe)"
+                  : "Tap once: maybe for gap " + n;
+        });
+      });
+      updateCount();
+    };
+    refresh();
+    const addCand = (n,i)=>{ if(candOf(set.id,n).indexOf(i) < 0) toggleCand(set.id,n,i); };
+    const dropCand = (n,i)=>{ if(candOf(set.id,n).indexOf(i) > -1) toggleCand(set.id,n,i); };
+    const pen = (n,i)=>{
+      if(picks[n] === i){ delete picks[n]; }
+      else {
+        Object.keys(picks).forEach(m=>{ if(picks[m] === i){ delete picks[m]; if(PENCIL) addCand(+m,i); } });  /* one sentence, one gap: move it */
+        if(PENCIL && picks[n] !== undefined) addCand(n, picks[n]);   /* the old answer here drops back to a maybe */
+        picks[n] = i;
+        if(PENCIL) dropCand(n,i);
+      }
+      keep(); refresh();
+    };
+    const pp = document.getElementById("ppane");
+    if(pp && PENCIL) pp.addEventListener("click", ev=>{
+      const t = ev.target.closest && ev.target.closest(".pvb[data-i]");
+      if(!t) return;
+      ev.stopPropagation(); ev.preventDefault();
+      S.preview[set.id] = S.preview[set.id] || {}; S.preview[set.id][+t.dataset.q] = +t.dataset.i;
+      save(); refresh();
+    }, true);
+    const tap = (n,i)=>{
+      if(PENCIL){                                      /* blank -> maybe -> answer -> blank */
+        if(picks[n] === i){ delete picks[n]; keep(); refresh(); return; }
+        if(candOf(set.id,n).indexOf(i) > -1){ pen(n,i); return; }
+        toggleCand(set.id,n,i);
+        S.preview[set.id] = S.preview[set.id] || {}; S.preview[set.id][n] = i;   /* newest maybe goes in the blank */
+        save(); refresh(); return;
+      }
+      pen(n,i);
+    };
+    /* same action from either side: letter in a gap card, or gap number under a sentence */
+    document.querySelectorAll('.chip:not([disabled]), .qb').forEach(b=>{
+      b.addEventListener("click", ()=>tap(+b.dataset.q, +b.dataset.i));
+    });
+    if(PROOF) document.querySelectorAll("input.proof").forEach(inp=>{
+      inp.addEventListener("input", ()=>{
+        S.proof[set.id] = S.proof[set.id] || {};
+        if(inp.value.trim()) S.proof[set.id][inp.dataset.q] = inp.value; else delete S.proof[set.id][inp.dataset.q];
+        save();
+      });
+    });
+  } else {
+    const applyPick = (q,i)=>{
+      document.querySelectorAll('.opt[data-q="'+q+'"]').forEach(x=>x.classList.remove("sel"));
+      const lab = document.querySelector('.opt[data-q="'+q+'"][data-i="'+i+'"]');
+      if(lab) lab.classList.add("sel");
+      const card = document.getElementById('q-'+set.id+'-'+q);
+      if(card) card.classList.remove("unanswered");
+      paintBlank(set, q, i, 'filled');
+    };
+    Object.keys(picks).forEach(q=>applyPick(+q, picks[q]));
+    updateCount();
+    document.querySelectorAll('.opt:not(.locked)').forEach(lab=>{
+      lab.addEventListener("click", ()=>{
+        const q = +lab.dataset.q, i = +lab.dataset.i;
+        picks[q] = i;
+        applyPick(q,i);
+        keep(); updateCount();
+      });
+    });
+  }
+
+  document.getElementById("submit").onclick = ()=>{
+    const missing = qs.filter(q=>q.n!==0 && !(q.n in picks)).map(q=>q.n);
+    if(missing.length){
+      document.getElementById("setmsg").innerHTML =
+        '<div class="note">You still have <b>'+missing.length+'</b> unanswered: ' + (bank ? 'gap ' : 'question ')
+        + missing.join(", ") + '. Answer all ' + marksOf(set) + ' before submitting.'
+        + (function(){ const pc = bank && PENCIL ? missing.filter(n=>candOf(set.id,n).length) : [];
+             return pc.length ? '<br>\u270F\uFE0F Maybes are not answers. Tap a maybe again to answer ' + (pc.length>1 ? 'gaps ' : 'gap ') + pc.join(", ") + '.' : ''; })()
+        + '</div>';
+      missing.forEach(n=>{ const c = document.getElementById('q-'+set.id+'-'+n); if(c) c.classList.add("unanswered"); });
+      const first = document.getElementById('q-'+set.id+'-'+missing[0]);
+      if(first) first.scrollIntoView({behavior:"smooth", block:"center"});
+      return;
+    }
+    const answers = {}; let score = 0;
+    qs.forEach(q=>{
+      if(q.n===0) return;
+      answers[q.n] = picks[q.n];
+      if(picks[q.n] === q.key) score++;
+    });
+    S.sets[set.id] = { score:score, answers:answers };
+    queueSet(set);
+    if(S.draft) delete S.draft[set.id];
+    save(); render(); window.scrollTo(0,0);
+  };
+}
+
+function renderBanner(score, max){
+  const f = max ? score/max : 0;
+  const tone = f >= 0.8 ? "ok" : f >= 0.5 ? "mid" : "low";
+  const msg = score === max ? "Perfect. Full marks \u2014 keep that momentum."
+    : f >= 0.8 ? "Strong work. Read through the ones you missed before moving on."
+    : f >= 0.5 ? "Decent. Check the green answers above and note why your choice did not fit."
+    : "Tough one. Reread the passage around each red answer \u2014 the clue is always in the sentences before and after the gap.";
+  document.getElementById("setmsg").innerHTML =
+    '<div class="banner '+tone+'"><div class="big">'+score+' / '+max+'</div>'
+    + '<div class="msg">'+msg+'</div></div>';
+}
+
+function renderFinal(){
+  let total = 0;
+  const rows = SETS.map(s=>{
+    const r = S.sets[s.id] || {score:0};
+    const m = marksOf(s);
+    total += r.score;
+    return '<tr><td><b>'+U+' '+s.id+'</b><br><span style="color:#5d6b7a;font-size:.85rem">'+esc(s.title)+'</span></td>'
+         + '<td class="num">'+r.score+' / '+m+'</td>'
+         + '<td class="num">'+Math.round(r.score/m*100)+'%</td></tr>';
+  }).join("");
+  const pct = Math.round(total/TOTAL*100);
+  const grade = pct>=90?"A+":pct>=80?"A":pct>=70?"B":pct>=60?"C":pct>=50?"D":pct>=40?"E":"G";
+
+  const wrong = [];
+  SETS.forEach(s=>{
+    const r = S.sets[s.id]; if(!r) return;
+    QS(s).forEach(q=>{
+      if(q.n===0) return;
+      const p = r.answers[q.n];
+      if(p !== q.key) wrong.push({set:s, n:q.n, picked:p, key:q.key, opts:q.opts, alt:(q.alt !== null && p === q.alt)});
+    });
+  });
+  const nAlt = wrong.filter(w=>w.alt).length;
+  const ans = (w,i,c) => isBank(w.set)
+    ? '<span class="'+c+'">'+LTR[i]+'</span> <i>'+esc(w.opts[i])+'</i>'
+    : '<span class="'+c+'">'+LTR[i]+' '+esc(w.opts[i])+'</span>';
+
+  let html = '<div class="card narrow">'
+    + '<span class="badge">Final report</span>'
+    + '<h2 style="margin-top:8px">' + esc(CONFIG.reportTitle || "Practice \u2014 Result Slip") + '</h2>'
+    + '<div class="idline"><div>Name: <b>'+esc(S.name)+'</b></div><div>Class: <b>'+esc(S.klass)+'</b></div>'
+    + '<div>Date: <b>'+new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+'</b></div>'
+    + '<div>BM support: <b>' + (S.support ? "on" : "off")
+    + (unlockedCount() ? " \u00b7 " + unlockedCount() + " paragraph(s) translated" : "") + '</b></div></div>'
+    + '<div class="banner '+(pct>=70?"ok":pct>=50?"mid":"low")+'" style="margin-top:18px">'
+    + '<div class="big">'+total+' / '+TOTAL+' &nbsp;<span style="font-size:1rem;font-weight:600">('+pct+'% &middot; grade '+grade+')</span></div>'
+    + '<div class="msg">'+(wrong.length===0 ? "Flawless \u2014 " + TOTAL + "/" + TOTAL + " across every " + U.toLowerCase() + "."
+        : "You got "+wrong.length+" question"+(wrong.length>1?"s":"")+" wrong"
+          + (nAlt ? " (" + nAlt + " of them defensible \u2014 check with your teacher)" : "")
+          + ". The full list is below \u2014 copy them into your exercise book.")+'</div></div>'
+    + '<h3>Marks by ' + U.toLowerCase() + '</h3>'
+    + '<table><thead><tr><th>'+U+'</th><th class="num">Score</th><th class="num">%</th></tr></thead>'
+    + '<tbody>'+rows+'<tr class="total"><td>TOTAL</td><td class="num">'+total+' / '+TOTAL+'</td>'
+    + '<td class="num">'+pct+'%</td></tr></tbody></table>'
+    + '<h3>Questions you got wrong ('+wrong.length+')</h3>';
+
+  if(!wrong.length){
+    html += '<div class="allright">No mistakes. Nothing to review \u2014 outstanding.</div>';
+  } else {
+    html += wrong.map(w =>
+      '<div class="wrongitem">'
+      + '<div class="wh">'+U+' '+w.set.id+' &middot; '+esc(w.set.title)+' &middot; Question '+w.n
+      + (w.alt ? ' &middot; <span style="color:#9a6700">defensible</span>' : '') + '</div>'
+      + '<div class="ctx">'+contextFor(w.set, w.n)+'</div>'
+      + '<div class="cmp">Your answer: '+ans(w, w.picked, 'y')
+      + (isBank(w.set) ? '<br>' : ' &nbsp;&rarr;&nbsp; ') + 'Correct answer: '+ans(w, w.key, 'c')+'</div>'
+      + ((isBank(w.set) && PENCIL && candOf(w.set.id,w.n).length) ? '<div class="rpx">\u270F\uFE0F Your maybes: <b>' + candOf(w.set.id,w.n).map(i=>LTR[i]).join(", ") + '</b>'
+          + (candOf(w.set.id,w.n).indexOf(w.key) > -1 ? ' (the key was one of them)' : ' (the key was not one of them)') + '</div>' : '')
+      + ((isBank(w.set) && PROOF && proofOf(w.set.id,w.n)) ? '<div class="rpx">\uD83D\uDD0E Your proof: <i>' + esc(proofOf(w.set.id,w.n)) + '</i></div>' : '')
+      + expBlock(w.set.id, w.n, w.picked, true)
+      + '</div>').join("");
+  }
+  if(PROOF && HAS_BANK){
+    const pr = [];
+    SETS.forEach(s=>{
+      const r = S.sets[s.id]; if(!r || !isBank(s)) return;
+      QS(s).forEach(q=>{ if(q.n && proofOf(s.id,q.n)) pr.push({s:s, q:q, p:r.answers[q.n]}); });
+    });
+    if(pr.length){
+      html += '<h3>Proof words (' + pr.length + ')</h3>'
+        + '<p class="sub" style="margin:0 0 6px">The word or phrase you used to justify each answer. Not marked, but this is how you prove a Part 4 answer.</p>'
+        + '<table class="prt"><thead><tr><th>' + U + '</th><th>Gap</th><th>Answer</th><th>Proof</th></tr></thead><tbody>'
+        + pr.map(x=>'<tr><td>' + x.s.id + '</td><td>' + x.q.n + '</td><td><b class="' + (x.p === x.q.key ? 'pc' : 'py') + '">'
+          + LTR[x.p] + (x.p === x.q.key ? ' \u2713' : ' \u00D7') + '</b></td><td><i>' + esc(proofOf(x.s.id,x.q.n)) + '</i></td></tr>').join("")
+        + '</tbody></table>';
+    }
+  }
+
+  html += '<div class="btnrow no-print">'
+    + '<button id="printbtn">Print / Save as PDF</button>'
+    + '<button class="ghost" id="review">Review a ' + U.toLowerCase() + '</button>'
+    + '<button class="ghost" id="restart">Start over</button>'
+    + '</div></div>';
+
+  document.getElementById("app").innerHTML = html;
+  document.getElementById("printbtn").onclick = ()=>{
+    document.querySelectorAll("details").forEach(d=>d.open = true);
+    window.print();
+  };
+  document.getElementById("review").onclick = ()=>{ S.done=false; S.idx=0; save(); render(); window.scrollTo(0,0); };
+  document.getElementById("restart").onclick = ()=>{
+    if(confirm("Clear all your answers and start again from " + U + " " + SETS[0].id + "?")){
+      wipe();
+      S = {studentId:S.studentId, attemptId:freshId(), receipts:{}, name:S.name, klass:S.klass, idx:0, sets:{}, done:false, support:S.support, unlocked:{}, draft:{}, pencil:{}, proof:{}, preview:{}, hl:{}};
+      save(); render(); window.scrollTo(0,0);
+    }
+  };
+}
+
+/* ---------- v1.2 highlighter: words in the passage and the sentence bank ---------- */
+const HL_SKIP = ".blk,.bmbtn,.bm,.omy,.ut,.bl,.qn";
+function wrapWords(root, key){
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  while(tw.nextNode()){
+    const nd = tw.currentNode;
+    if(nd.parentElement && nd.parentElement.closest(HL_SKIP)){ nodes.push(null); continue; }   /* break: never join across a gap */
+    nodes.push(nd);
+  }
+  /* word numbers come from the plain text, so a word split by markup (e.g. a BM gloss
+     before a comma) keeps one number and highlights survive switching BM on/off */
+  let k = 0, joined = false;
+  nodes.forEach(nd=>{
+    if(!nd){ joined = false; return; }
+    const frag = document.createDocumentFragment();
+    const toks = nd.nodeValue.split(/(\s+)/).filter(Boolean);
+    toks.forEach((tok, ti)=>{
+      if(/^\s+$/.test(tok)){ frag.appendChild(document.createTextNode(tok)); joined = false; return; }
+      const s = document.createElement("span");
+      s.className = "w"; s.dataset.k = key;
+      s.dataset.w = (ti === 0 && joined) ? k - 1 : k++;
+      s.textContent = tok;
+      frag.appendChild(s);
+      joined = true;
+    });
+    nd.parentNode.replaceChild(frag, nd);
+  });
+}
+function hlSetup(set){
+  document.querySelectorAll("#app [data-hk]").forEach(el=>wrapWords(el, el.dataset.hk));
+  const m = S.hl[set.id] || {};
+  Object.keys(m).forEach(k=>(m[k] || []).forEach(w=>{
+    document.querySelectorAll('#app .w[data-k="'+k+'"][data-w="'+w+'"]').forEach(s=>s.classList.add("hl"));
+  }));
+  const b = document.getElementById("hlclr");
+  if(b){
+    b.style.display = Object.keys(m).length ? "" : "none";
+    b.onclick = ()=>{ delete S.hl[set.id]; save(); document.querySelectorAll("#app .w.hl").forEach(s=>s.classList.remove("hl")); b.style.display = "none"; };
+  }
+}
+function hlStore(){
+  const set = SETS[S.idx]; if(!set) return;
+  const m = {};
+  document.querySelectorAll("#app .w.hl").forEach(s=>{ const a = (m[s.dataset.k] = m[s.dataset.k] || []); if(a.indexOf(+s.dataset.w) < 0) a.push(+s.dataset.w); });
+  if(Object.keys(m).length) S.hl[set.id] = m; else delete S.hl[set.id];
+  save();
+  const b = document.getElementById("hlclr"); if(b) b.style.display = Object.keys(m).length ? "" : "none";
+}
+let hlJust = 0;
+function hlApply(){
+  if(!HILITE) return;
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.rangeCount) return;
+  const r = sel.getRangeAt(0);
+  const hit = [...document.querySelectorAll("#app .w")].filter(s=>r.intersectsNode(s));
+  if(!hit.length) return;
+  hit.forEach(s=>document.querySelectorAll('#app .w[data-k="'+s.dataset.k+'"][data-w="'+s.dataset.w+'"]').forEach(x=>x.classList.add("hl")));
+  sel.removeAllRanges();
+  hlJust = Date.now();
+  hlStore();
+}
+if(HILITE){
+  document.addEventListener("mouseup", ()=>setTimeout(hlApply, 0));
+  document.addEventListener("touchend", ()=>setTimeout(hlApply, 350));
+  let hlT = null;
+  document.addEventListener("selectionchange", ()=>{ clearTimeout(hlT); hlT = setTimeout(hlApply, 900); });  /* phone long-press */
+  document.addEventListener("click", ev=>{
+    const w = ev.target.closest && ev.target.closest(".w.hl");
+    if(!w || Date.now() - hlJust < 400) return;
+    ev.stopPropagation(); ev.preventDefault();
+    /* tap a highlight: remove the whole highlighted phrase it belongs to */
+    const k = w.dataset.k, at = +w.dataset.w;
+    const get = i => [...document.querySelectorAll('#app .w[data-k="'+k+'"][data-w="'+i+'"]')];
+    const on = i => get(i).some(s=>s.classList.contains("hl"));
+    const off = i => get(i).forEach(s=>s.classList.remove("hl"));
+    let i = at + 1; while(on(i)){ off(i); i++; }
+    i = at - 1; while(i >= 0 && on(i)){ off(i); i--; }
+    off(at);
+    hlStore();
+  }, true);
+}
+
+function render(){
+  if(!S.studentId || !S.name || !S.klass) return renderStart();
+  paintSync();
+  if(S.done) return renderFinal();
+  if(Object.keys(S.sets).length === SETS.length && S.idx >= SETS.length){ S.done = true; return renderFinal(); }
+  renderSet();
+}
+
+document.getElementById("apptitle").textContent = CONFIG.appTitle;
+document.getElementById("appsub").textContent = CONFIG.appSubtitle;
+document.title = CONFIG.appTitle;
+
+/* ---------- Malay word bubble ---------- */
+document.body.insertAdjacentHTML("beforeend", '<div id="tip"></div>');
+document.addEventListener("click", e=>{
+  const tip = document.getElementById("tip");
+  const g = e.target && e.target.closest ? e.target.closest(".gw") : null;
+  if(g){
+    e.preventDefault(); e.stopPropagation();
+    tip.innerHTML = '<b>' + esc(g.textContent) + '</b> = ' + esc(g.dataset.m);
+    tip.style.display = "block";
+    const r = g.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    let L = r.left + r.width/2 - w/2;
+    L = Math.max(8, Math.min(L, window.innerWidth - w - 8));
+    let T = r.top - h - 8;
+    if(T < 8) T = r.bottom + 8;
+    tip.style.left = L + "px"; tip.style.top = T + "px";
+    return;
+  }
+  tip.style.display = "none";
+}, true);
+
+load(); installCloudBar(); render(); loadRoster(); if(outbox.length)flushQueue();
+</script>
+</body>
+</html>
